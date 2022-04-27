@@ -60,14 +60,16 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 		}
 
 		//Pending - Hardcoded record type 1
-		record := &bairestt.TimeRecord{
-			ProjectId:     kern.config.ProjectId,
-			RecordTypeId:  1,
-			FocalPointId:  kern.config.FocalPointId,
-			Date:          recDate,
-			DescriptionId: descId,
-			Comments:      args["Comment"],
-			Hours:         float32(hours),
+		record := &localStore.Record{
+			TimeRecord: bairestt.TimeRecord{
+				ProjectId:     kern.config.ProjectId,
+				RecordTypeId:  1,
+				FocalPointId:  kern.config.FocalPointId,
+				Date:          recDate,
+				DescriptionId: descId,
+				Comments:      args["Comment"],
+				Hours:         float32(hours),
+			},
 		}
 
 		err = localStore.Save(record)
@@ -127,14 +129,16 @@ func StopRecord(kern *Kernel) repl.ActionFunc {
 		}
 
 		//Pending - Hardcoded record type 1
-		record := &bairestt.TimeRecord{
-			ProjectId:     kern.config.ProjectId,
-			RecordTypeId:  1,
-			FocalPointId:  kern.config.FocalPointId,
-			Date:          recDate,
-			DescriptionId: descId,
-			Comments:      comment,
-			Hours:         float32(hours),
+		record := &localStore.Record{
+			TimeRecord: bairestt.TimeRecord{
+				ProjectId:     kern.config.ProjectId,
+				RecordTypeId:  1,
+				FocalPointId:  kern.config.FocalPointId,
+				Date:          recDate,
+				DescriptionId: descId,
+				Comments:      comment,
+				Hours:         float32(hours),
+			},
 		}
 
 		err = localStore.Save(record)
@@ -175,14 +179,16 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 			return "", err
 		}
 
-		record := &bairestt.TimeRecord{
-			ProjectId:     kern.config.ProjectId,
-			RecordTypeId:  1, //Pending - Hardcoded record type 1
-			FocalPointId:  kern.config.FocalPointId,
-			Date:          recDate,
-			DescriptionId: descId,
-			Comments:      comment,
-			Hours:         float32(hours),
+		record := &localStore.Record{
+			TimeRecord: bairestt.TimeRecord{
+				ProjectId:     kern.config.ProjectId,
+				RecordTypeId:  1, //Pending - Hardcoded record type 1
+				FocalPointId:  kern.config.FocalPointId,
+				Date:          recDate,
+				DescriptionId: descId,
+				Comments:      comment,
+				Hours:         float32(hours),
+			},
 		}
 
 		err = localStore.Save(record)
@@ -208,7 +214,8 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 			return "", err
 		}
 
-		remTime := kern.config.WorkingTime
+		commitedTime := localStore.GetTimeByStatus(state.Date, localStore.StatusCommited)
+		remTime := kern.config.WorkingTime - commitedTime
 		for _, f := range files {
 			record, err := localStore.Get(state.Date, f)
 			if err != nil {
@@ -217,8 +224,6 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 
 			if remTime < record.Hours {
 				newRecord := *record
-
-				newRecord.Date = newRecord.Date.AddDate(0, 0, 1)
 				newRecord.Hours = record.Hours - remTime
 
 				err = localStore.SaveToPool(&newRecord)
@@ -226,10 +231,26 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 					return "", err
 				}
 
-				record.Hours = remTime
+				if remTime == 0 {
+					err = localStore.DeleteRecord(&record.Date, record.Id)
+					if err != nil {
+						return "", err
+					}
+
+					//If there is not remaining time the time is not sent to the TT
+					continue
+
+				} else {
+					record.Hours = remTime
+
+					err = localStore.Save(record)
+					if err != nil {
+						return "", err
+					}
+				}
 			}
 
-			_, err = tt.AddRecord(ctx, record)
+			_, err = tt.AddRecord(ctx, &record.TimeRecord)
 
 			if err != nil {
 				err := fmt.Errorf("error commiting new record, %w", err)
@@ -615,5 +636,93 @@ func SetWorkingTime(kern *Kernel) repl.InteractiveFunc {
 		}
 
 		r.PrintInfoMessage("Working time added!")
+	}
+}
+
+type RecordSearch []*localStore.Record
+
+func (t RecordSearch) GetElement(i int) string {
+	return fmt.Sprintf("[%.2f] - %s", t[i].Hours, t[i].Comments)
+}
+
+func (t RecordSearch) Size() int {
+	return len(t)
+}
+
+func EditStoredRecord(kern *Kernel) repl.InteractiveFunc {
+	return func(ctx context.Context, r *repl.Handler) {
+		records, err := localStore.GetAllByStatus(kern.state.Date, localStore.StatusPending)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		id := r.SelectFromList(RecordSearch(records))
+
+		if id < 0 {
+			return
+		}
+
+		record := records[id]
+
+		cxtTask, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		tasks, err := kern.tt.GetTasks(cxtTask)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		task, err := getTaskDetails(tasks, record.DescriptionId)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		r.PrintHighightedMessage("Current data")
+
+		r.PrintMap(map[string]string{
+			"Task name":     task.Name,
+			"Task category": task.Category,
+			"Duration":      fmt.Sprintf("%.2f", record.Hours),
+			"Comment":       record.Comments,
+		})
+
+		cont := r.GetInput("Select an option (e: edit, q: cancel)")
+
+		if strings.ToLower(cont) == "q" {
+			r.PrintMessage("Canceled!")
+			return
+		}
+
+		if strings.ToLower(cont) != "e" {
+			r.PrintMessage("Wrong input!")
+			return
+		}
+
+		r.PrintHighightedMessage("Editing data")
+
+		AddRecord(kern).WithArgs(kern.recTemp, "Id", "Comment", "Hours").Run(r)
+
+		err = localStore.DeleteRecord(kern.state.Date, record.Id)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+	}
+}
+
+func PourePool(kern *Kernel) repl.ActionFunc {
+	return func(ctx context.Context) (string, error) {
+		err := localStore.PourePool(kern.state.Date)
+		if err != nil {
+			return "", err
+		}
+
+		return "Pool poured!", nil
 	}
 }

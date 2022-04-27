@@ -8,9 +8,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
-	"varmijo/time-tracker/bairestt"
 
 	"github.com/google/uuid"
 )
@@ -24,28 +24,77 @@ func init() {
 	}
 }
 
-func Save(record *bairestt.TimeRecord) error {
-	sdate := getDate(&record.Date)
-	path := storePath + "/" + sdate
+func Save(record *Record) error {
+	folder := getDateString(&record.Date)
 
-	return saveToFile(path, record)
+	return saveToFile(folder, record)
 }
 
-func SaveToPool(record *bairestt.TimeRecord) error {
-	path := storePath + "/pool"
-
-	return saveToFile(path, record)
+func SaveToPool(record *Record) error {
+	return saveToFile("pool", record)
 }
 
-func saveToFile(path string, record *bairestt.TimeRecord) error {
-	err := os.MkdirAll(path, os.ModePerm)
+func DeleteRecord(date *time.Time, name string) error {
+	folder := getDateString(date)
+	return os.Remove(getFilePath(folder, name))
+}
+
+func PourePool(date *time.Time) error {
+	files, err := ListByStatus(nil, StatusPool)
 	if err != nil {
 		return err
 	}
 
-	id := uuid.New()
+	if len(files) == 0 {
+		return fmt.Errorf("nothing to poure")
+	}
 
-	fileName := fmt.Sprintf("%s/%s.json", path, id)
+	newFolder := getDateString(date)
+
+	err = os.MkdirAll(getBasePath(newFolder), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range files {
+
+		err = os.Rename(getFilePath("pool", name), getFilePath(newFolder, name))
+		if err != nil {
+			return err
+		}
+
+		file, err := Get(date, name)
+
+		if err != nil {
+			return err
+		}
+
+		file.Date = getDate(date)
+
+		err = Save(file)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func saveToFile(folder string, record *Record) error {
+
+	err := os.MkdirAll(getBasePath(folder), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	if record.Id == "" {
+		id := uuid.New()
+		record.Id = id.String()
+	}
+
+	fileName := getFilePath(folder, record.Id)
 
 	data, err := json.MarshalIndent(record, "", "\t")
 	if err != nil {
@@ -61,16 +110,16 @@ func saveToFile(path string, record *bairestt.TimeRecord) error {
 }
 
 func ListByStatus(date *time.Time, status string) ([]string, error) {
-	var path string
+	var folder string
 
 	if status == StatusPool {
-		path = storePath + "/pool"
+		folder = "pool"
+		status = StatusStored
 	} else {
-		sdate := getDate(date)
-		path = storePath + "/" + sdate
+		folder = getDateString(date)
 	}
 
-	files, err := ioutil.ReadDir(path)
+	files, err := ioutil.ReadDir(getBasePath(folder))
 
 	if errors.Is(err, os.ErrNotExist) {
 		return []string{}, nil
@@ -94,29 +143,42 @@ func ListByStatus(date *time.Time, status string) ([]string, error) {
 	return list, nil
 }
 
-func getDate(date *time.Time) string {
+func getDate(date *time.Time) time.Time {
 	if date == nil {
-		return time.Now().Format("2006-01-02")
+		return time.Now()
 	}
-	return date.Format("2006-01-02")
+	return *date
 }
 
-func Get(date *time.Time, name string) (*bairestt.TimeRecord, error) {
-	sdate := getDate(date)
-	path := storePath + "/" + sdate
+func getDateString(date *time.Time) string {
+	return getDate(date).Format("2006-01-02")
+}
 
-	ext := ".json"
-	fileName := path + "/" + name + ext
+func Get(date *time.Time, name string) (*Record, error) {
+	sdate := getDateString(date)
+	return getRecord(sdate, name)
+}
+
+func GetFromPool(name string) (*Record, error) {
+	return getRecord("pool", name)
+}
+
+func getRecord(folder, name string) (*Record, error) {
+	fileName := getFilePath(folder, name)
 
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
 
-	record := &bairestt.TimeRecord{}
+	record := &Record{}
 	err = json.Unmarshal(data, record)
 	if err != nil {
 		return nil, err
+	}
+
+	if record.Id == "" {
+		record.Id = name
 	}
 
 	return record, nil
@@ -127,13 +189,9 @@ func SetCommit(date *time.Time, name string) error {
 		return fmt.Errorf("record already commited")
 	}
 
-	sdate := getDate(date)
-	path := storePath + "/" + sdate
-	newName := name + ".com.json"
+	sdate := getDateString(date)
 
-	name = name + ".json"
-
-	return os.Rename(path+"/"+name, path+"/"+newName)
+	return os.Rename(getFilePath(sdate, name), getCommitedFilePath(sdate, name))
 }
 
 func IsCommitted(name string) bool {
@@ -142,8 +200,8 @@ func IsCommitted(name string) bool {
 	return len(parts) == 2
 }
 
-func GetAllByStatus(date *time.Time, status string) ([]*bairestt.TimeRecord, error) {
-	list := []*bairestt.TimeRecord{}
+func GetAllByStatus(date *time.Time, status string) ([]*Record, error) {
+	list := []*Record{}
 
 	files, err := ListByStatus(date, status)
 
@@ -152,7 +210,13 @@ func GetAllByStatus(date *time.Time, status string) ([]*bairestt.TimeRecord, err
 	}
 
 	for _, f := range files {
-		record, err := Get(date, f)
+		record, err := func(f string) (*Record, error) {
+			if status == StatusPool {
+				return GetFromPool(f)
+			} else {
+				return Get(date, f)
+			}
+		}(f)
 
 		if err != nil {
 			return nil, err
@@ -160,6 +224,10 @@ func GetAllByStatus(date *time.Time, status string) ([]*bairestt.TimeRecord, err
 
 		list = append(list, record)
 	}
+
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Date.After(list[j].Date)
+	})
 
 	return list, nil
 }
@@ -177,4 +245,16 @@ func GetTimeByStatus(date *time.Time, status string) float32 {
 	}
 
 	return Worked
+}
+
+func getFilePath(folder, name string) string {
+	return fmt.Sprintf("%s/%s.json", getBasePath(folder), name)
+}
+
+func getCommitedFilePath(folder, name string) string {
+	return fmt.Sprintf("%s/%s.com.json", getBasePath(folder), name)
+}
+
+func getBasePath(folder string) string {
+	return fmt.Sprintf("%s/%s", storePath, folder)
 }

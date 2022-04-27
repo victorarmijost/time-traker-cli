@@ -158,6 +158,11 @@ func getPrompt(state *state.State) repl.Prompt {
 			statusBar = fmt.Sprintf("%s[Commited:%.2f]", statusBar, ct)
 		}
 
+		pt := localStore.GetTimeByStatus(nil, localStore.StatusPool)
+		if pt > 0 {
+			statusBar = fmt.Sprintf("%s[Pool:%.2f]", statusBar, pt)
+		}
+
 		if state.IsWorking() {
 			statusBar = fmt.Sprintf("%s[Tracking:%.2f]", statusBar, state.GetTaskTime(nil))
 		}

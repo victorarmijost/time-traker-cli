@@ -116,6 +116,11 @@ type Selectable interface {
 func (c *Handler) SelectFromList(l Selectable) int {
 	c.PrintHighightedMessage("Selection list")
 
+	if l.Size() == 0 {
+		c.PrintMessage("No results!")
+		return -1
+	}
+
 	selectMap := map[string]int{}
 	for i := 0; i < l.Size(); i++ {
 		fmt.Printf("%d. %s\n", i+1, l.GetElement(i))
