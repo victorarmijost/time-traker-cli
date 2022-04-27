@@ -17,3 +17,4 @@ cmd/config.json
 cmd/tt
 cmd/.tmp
 cmd/local
+.gitconfig.time-tracker-cli
