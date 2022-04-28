@@ -2,7 +2,7 @@
 
 This tool allows to insert time records, into the BairesDev Time Tracker; it is build in Go (Golang), you will need the Golang compailer to build it. The latest build excutable is available on the build folder, even though I recomend to build your own version from the code.
 
-The login process works on top of the Time Tracker web application; to use the application you will need to login with your Google account, that process is simulated using the Go [Chromedep](https://pkg.go.dev/github.com/chromedp/chromedp#section-readme) package, which required that you have ***Google Chrome installed***.
+The login process works on top of the Time Tracker web application; to use the application you will need to login with your Google account, that process is simulated using the Go [Chromedp](https://pkg.go.dev/github.com/chromedp/chromedp#section-readme) package, which required that you have ***Google Chrome installed***.
 
 To compile the application run:
 ```
