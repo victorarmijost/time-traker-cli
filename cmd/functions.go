@@ -86,6 +86,10 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 //Add a new record
 func StartRecord(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
+		if kern.state.Date != nil {
+			return "", fmt.Errorf("wrong date, change back to today")
+		}
+
 		tasks, err := kern.tt.GetTasks(ctx)
 
 		if err != nil {
@@ -304,7 +308,8 @@ func ChangeDate(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
 
-		if args["Date"] == "now" {
+		if args["Date"] == "now" || args["Date"] == "today" ||
+			args["Date"] == "" || args["Date"] == time.Now().Format("06-01-02") {
 			state.Date = nil
 			return "Date change!", nil
 		}

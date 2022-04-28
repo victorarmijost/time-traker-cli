@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"time"
+	"varmijo/time-tracker/utils"
 )
 
 type State struct {
@@ -23,8 +24,11 @@ func NewState() *State {
 	return &State{}
 }
 
+const statePath = ".tmp"
+const stateFile = "state.json"
+
 func (s *State) Load() error {
-	stateData, err := os.ReadFile(".tmp/state.json")
+	stateData, err := os.ReadFile(utils.GeAppPath(statePath) + "/" + stateFile)
 
 	if err != nil {
 		return err
@@ -49,7 +53,7 @@ func (s *State) Save() error {
 		return err
 	}
 
-	err = os.WriteFile(".tmp/state.json", stateData, 0644)
+	err = os.WriteFile(utils.GeAppPath(statePath)+"/"+stateFile, stateData, 0644)
 
 	if err != nil {
 		return err

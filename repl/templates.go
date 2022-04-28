@@ -66,7 +66,7 @@ func (t *TemplateHandler) List() []string {
 }
 
 func (t *TemplateHandler) Load() error {
-	path := TemplateDir + "/" + t.name
+	path := utils.GeAppPath(TemplateDir) + "/" + t.name
 
 	items, err := ioutil.ReadDir(path)
 
@@ -100,7 +100,7 @@ func (t *TemplateHandler) Load() error {
 }
 
 func (t *TemplateHandler) Save(name string, template Template) error {
-	path := TemplateDir + "/" + t.name
+	path := utils.GeAppPath(TemplateDir) + "/" + t.name
 
 	data, err := json.MarshalIndent(template, "", "\t")
 

@@ -60,7 +60,7 @@ Workflow
 
 This is the workflow which was used to design the tool:
 
-1. Use `rec` to start a time record. It will request a template (you must have some created already); and, if it is required, a description. It will record this information along with the initial time.
+1. Use `rec` to start a time recorder. It will request a template (you must have some created already); and, if it is required, a description; tt will record this information along with the initial time.
 2. Use `view` to see your current working task.
 3. Use `end` to complete your task, it will use the current time and the recored start time to calculate the worked time.
 4. Repeate the process for all you day tasks.
@@ -78,7 +78,7 @@ Edge cases
 5. If started the time record with the wrong template, use `edit` to change the record information, keeping the same start time.
 6. If you want to edit an exiting record, you can use `edit stored` to see the record details and change it.
 
-The tool works on today's date by default; but you can use `change date` to change to another date. This can be useful to add missing records for a previous day.
+The tool works on today's date by default; but you can use `change date` to change to another date. This can be useful to add missing records for a previous day, you must use `add` to add time on a diffent date.
 
 
 Status bar
