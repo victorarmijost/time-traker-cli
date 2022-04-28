@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"varmijo/time-tracker/utils"
 )
 
 type Bairestt struct {
@@ -25,6 +26,7 @@ type cache struct {
 
 const tmpPath = ".tmp"
 const employessPortalUrl = "https://employees.bairesdev.com"
+const cacheFileName = "tt_cahe.json"
 
 func NewService(email string) *Bairestt {
 	return &Bairestt{
@@ -38,7 +40,7 @@ func NewService(email string) *Bairestt {
 }
 
 func init() {
-	err := os.MkdirAll(tmpPath, os.ModePerm)
+	err := os.MkdirAll(utils.GeAppPath(tmpPath), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,12 +52,12 @@ func (t *Bairestt) saveCache() error {
 		return err
 	}
 
-	return os.WriteFile(tmpPath+"/tt_cahe.json", cacheData, 0644)
+	return os.WriteFile(utils.GeAppPath(tmpPath)+"/"+cacheFileName, cacheData, 0644)
 
 }
 
 func (t *Bairestt) loadCache() error {
-	cacheData, err := os.ReadFile(tmpPath + "/tt_cahe.json")
+	cacheData, err := os.ReadFile(utils.GeAppPath(tmpPath) + "/" + cacheFileName)
 
 	if err != nil {
 		return err

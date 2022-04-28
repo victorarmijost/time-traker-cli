@@ -8,12 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"varmijo/time-tracker/utils"
 )
 
 const TemplateDir = "templates"
 
 func init() {
-	err := os.MkdirAll(TemplateDir, os.ModePerm)
+	err := os.MkdirAll(utils.GeAppPath(TemplateDir), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +28,7 @@ type TemplateHandler struct {
 }
 
 func NewTemplateHandler(name string) *TemplateHandler {
-	err := os.MkdirAll(TemplateDir+"/"+name, os.ModePerm)
+	err := os.MkdirAll(utils.GeAppPath(TemplateDir)+"/"+name, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}

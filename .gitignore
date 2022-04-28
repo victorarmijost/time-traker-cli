@@ -13,8 +13,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-cmd/config.json
-cmd/tt
-cmd/.tmp
-cmd/local
+build/config.json
+build/.tmp
+build/local
+build/test
 .gitconfig.time-tracker-cli

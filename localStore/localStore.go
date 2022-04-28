@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"varmijo/time-tracker/utils"
 
 	"github.com/google/uuid"
 )
@@ -18,7 +19,7 @@ import (
 const storePath = "local"
 
 func init() {
-	err := os.MkdirAll(storePath, os.ModePerm)
+	err := os.MkdirAll(utils.GeAppPath(storePath), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -256,5 +257,5 @@ func getCommitedFilePath(folder, name string) string {
 }
 
 func getBasePath(folder string) string {
-	return fmt.Sprintf("%s/%s", storePath, folder)
+	return fmt.Sprintf("%s/%s", utils.GeAppPath(storePath), folder)
 }

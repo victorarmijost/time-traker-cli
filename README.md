@@ -1,16 +1,17 @@
 # Time Tracker CLI
 
-This tool allows to insert time records, into the BairesDev Time Tracker; the login process works on top of the Time Tracker web application; to use the application you will need to login with your Google account, that process is simulated using the Go [Chromedep](https://pkg.go.dev/github.com/chromedp/chromedp#section-readme) package, which required that you have ***Google Chrome installed***.
+This tool allows to insert time records, into the BairesDev Time Tracker; it is build in Go (Golang), you will need the Golang compailer to build it. The latest build excutable is available on the build folder, even though I recomend to build your own version from the code.
+
+The login process works on top of the Time Tracker web application; to use the application you will need to login with your Google account, that process is simulated using the Go [Chromedep](https://pkg.go.dev/github.com/chromedp/chromedp#section-readme) package, which required that you have ***Google Chrome installed***.
 
 To compile the application run:
 ```
-cd cmd
-go build -o tt *.go
+sh build.sh
 ```
 
 It will create a binary called `tt`, use this to execute it:
 ```
-./tt
+./build/tt
 ```
 
 The first time that you open the application, it will create its required folders structure and it will ask you for your some configuration information like your focal point and your project.
@@ -52,7 +53,7 @@ Most of the commands works by requesting a set of fields and providing a sigle r
 
 Some commands like: `rec` or `add` are using templates; a template is a way to predefine the fields for some records,you can create a new template by using `temp add`.
 
-There are some templates already created under the `cmd/templates/rec` folder, but you can delete them and add your own templates. Use `temp list` to see all the created templates.
+There are some templates already created under the `build/templates/rec` folder, but you can delete them and add your own templates. Use `temp list` to see all the created templates.
 
 Workflow
 ==

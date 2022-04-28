@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"varmijo/time-tracker/utils"
 )
 
 type Config struct {
@@ -12,6 +13,8 @@ type Config struct {
 	Email        string  `json:"email"`
 	Password     string  `json:"password"`
 }
+
+const ConfigFileName = "config.json"
 
 func NewConfig() *Config {
 	return &Config{}
@@ -34,7 +37,7 @@ func (s *Config) IsComplete() bool {
 }
 
 func (s *Config) Load() error {
-	configData, err := os.ReadFile("config.json")
+	configData, err := os.ReadFile(utils.GeAppPath(ConfigFileName))
 
 	if err != nil {
 		return err
@@ -59,5 +62,5 @@ func (s *Config) Save() error {
 		return err
 	}
 
-	return os.WriteFile("config.json", configData, 0644)
+	return os.WriteFile(utils.GeAppPath(ConfigFileName), configData, 0644)
 }
