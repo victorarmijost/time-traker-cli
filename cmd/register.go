@@ -23,6 +23,7 @@ func registerFunctions(cmds *repl.Handler, kern *Kernel) {
 	cmds.Handle("view", ViewRecord(kern))
 	cmds.Handle("edit stored", EditStoredRecord(kern))
 	cmds.Handle("poure", PourePool(kern))
+	cmds.Handle("delete", DeleteStoredRecord(kern))
 
 	//Navigate
 	cmds.Handle("change date", ChangeDate(kern).WithArgs(nil, "Date"))
@@ -51,6 +52,7 @@ func addHelp(cmds *repl.Handler) {
 	cmds.Help("view", "Allow to view the current time recorder.")
 	cmds.Help("edit stored", "Allows to edit a non commited recored.")
 	cmds.Help("poure", "Poures all the time on the pool to the current date.")
+	cmds.Help("delete", "Allows to delete a non commited recored.")
 
 	//Navigate
 	cmds.Help("change date", "Allow to change the current working date.")

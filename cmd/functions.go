@@ -716,6 +716,71 @@ func EditStoredRecord(kern *Kernel) repl.InteractiveFunc {
 	}
 }
 
+func DeleteStoredRecord(kern *Kernel) repl.InteractiveFunc {
+	return func(ctx context.Context, r *repl.Handler) {
+		records, err := localStore.GetAllByStatus(kern.state.Date, localStore.StatusPending)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		id := r.SelectFromList(RecordSearch(records))
+
+		if id < 0 {
+			return
+		}
+
+		record := records[id]
+
+		cxtTask, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		tasks, err := kern.tt.GetTasks(cxtTask)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		task, err := getTaskDetails(tasks, record.DescriptionId)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		r.PrintHighightedMessage("Current data")
+
+		r.PrintMap(map[string]string{
+			"Task name":     task.Name,
+			"Task category": task.Category,
+			"Duration":      fmt.Sprintf("%.2f", record.Hours),
+			"Comment":       record.Comments,
+		})
+
+		cont := r.GetInput("Select an option (d: dete, q: cancel)")
+
+		if strings.ToLower(cont) == "q" {
+			r.PrintMessage("Canceled!")
+			return
+		}
+
+		if strings.ToLower(cont) != "e" {
+			r.PrintMessage("Wrong input!")
+			return
+		}
+
+		err = localStore.DeleteRecord(kern.state.Date, record.Id)
+
+		if err != nil {
+			r.PrintError(err)
+			return
+		}
+
+		r.PrintMessage("Recored deleted!")
+	}
+}
+
 func PourePool(kern *Kernel) repl.ActionFunc {
 	return func(ctx context.Context) (string, error) {
 		err := localStore.PourePool(kern.state.Date)

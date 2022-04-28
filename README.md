@@ -65,14 +65,17 @@ This is the workflow which was used to design the tool:
 4. Repeate the process for all you day tasks.
 5. Use `list` to see all your recorded time.
 6. Use `commit` to send your records to the BairesDev Time Tracker.
+7. Use `poure` to add the time on your pool to the current date. Se below for more details.
 
 Edge cases
 ==
 
 1. If you missed to record some time, you can use `add` to manually add it, it will request a template, an if it is required, a description and a task duration (in hours).
-2. If you missed the start time of a task that you are currently working, use `rec at` to start it at a defined hour.
-3. If you missed the end time of a task that you are currently working, use `end at` it will calculate the time base on the end hour that you provide.
-4. If started the time record with the wrong template, use `edit` to change the record information, keeping the same start time.
+2. If you added a recored by mistake, you can use `delete` to remove it.
+3. If you missed the start time of a task that you are currently working, use `rec at` to start it at a defined hour.
+4. If you missed the end time of a task that you are currently working, use `end at` it will calculate the time base on the end hour that you provide.
+5. If started the time record with the wrong template, use `edit` to change the record information, keeping the same start time.
+6. If you want to edit an exiting record, you can use `edit stored` to see the record details and change it.
 
 The tool works on today's date by default; but you can use `change date` to change to another date. This can be useful to add missing records for a previous day.
 
@@ -82,12 +85,19 @@ Status bar
 
 When you are using the application, the prompt may change adding some status values:
 ```
-[Worked:0.25][Commited:9.00][Tracking:0.25] tt >
+[Worked:0.25][Commited:9.00][Pool:0.25][Tracking:0.25] tt >
 ```
 
 1. ***Worked***: Is the total time that you have worked during the day and that is not commited. Once you commit this time will be added to Commited.
 2. ***Commited***: Is the total time that you have worked during the day that is commited.
 3. ***Tracking***: is the time worked on the current task. Once you end the task this time will be added to Worked.
+4. ***Pool***: is the time that could not bee commited becuase it exceed your configured daily working time. See below for more details.
+
+Pool
+=
+If you exceed your daily working time limit, when you `commit` your time, the remaining time will be save in your `pool`, you can later `poure` that time on another working day.
+
+For now, we the tool is not handling records for extra time.
 
 Application folders structure
 ==
