@@ -100,6 +100,10 @@ If you exceed your daily working time limit, when you `commit` your time, the re
 
 For now, we the tool is not handling records for extra time.
 
+Time Recording
+==
+By using the command `rec` you can start a timer and record your time, you will notice the tracked time on the status bar as `[Tracking:0.50]` notice that the time is tracked in quarters of an hour, also rounds up to the next quarter of hour if it is a fraction of time. So, it will show first `0.25`, in your first 15 minutes of work, then it will show `0.50` in the next 15 minutes and so on.
+
 Application folders structure
 ==
 
