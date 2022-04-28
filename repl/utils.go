@@ -3,6 +3,7 @@ package repl
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -42,12 +43,18 @@ func SprintMap(m map[string]string) string {
 		fmt.Fprint(buf, "Nothing to show!")
 	}
 
-	i := 0
-	for k, v := range m {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for i, k := range keys {
 		if i == len(m)-1 {
-			fmt.Fprintf(buf, "- %s: %s", k, v)
+			fmt.Fprintf(buf, "- %s: %s", k, m[k])
 		} else {
-			fmt.Fprintf(buf, "- %s: %s\n", k, v)
+			fmt.Fprintf(buf, "- %s: %s\n", k, m[k])
 		}
 		i++
 	}

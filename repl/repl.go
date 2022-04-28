@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -113,10 +114,18 @@ func (c *Handler) Repl() {
 }
 
 func (c *Handler) help() {
-	cmds := []string{}
-	for cmd := range c.cmds {
-		cmds = append(cmds, fmt.Sprintf("%s: %s", cmd, c.getHelp(cmd)))
-	}
+	c.PrintHighightedMessage("Command list")
+	c.Br()
 
-	c.PrintList(cmds)
+	keys := make([]string, 0, len(c.cmds))
+	for k := range c.cmds {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	i := 0
+	for _, cmd := range keys {
+		i++
+		fmt.Printf("%d. {{ %s }} : %s\n\n", i, cmd, c.getHelp(cmd))
+	}
 }
