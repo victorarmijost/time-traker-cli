@@ -80,6 +80,28 @@ Edge cases
 
 The tool works on today's date by default; but you can use `change date` to change to another date. This can be useful to add missing records for a previous day, you must use `add` to add time on a diffent date.
 
+Batch usage
+==
+You might need to add multiple records at the same time, in that case you can do the following:
+
+1. Create a file `tasks.txt` with all your commands:
+```
+add; bug; first task; 0.5
+add; feat; second task; 1
+add; meeting; third task; 2
+``` 
+2. Open the application and login to the it, to create a session. If you have not done the configuration process yet, you will need to do it.
+```
+./build/tt
+```
+3. Exit the aplication:
+```
+tt > exit
+```
+4. Send the commands in your file:
+```
+./build/tt < tasks.txt
+```
 
 Status bar
 ==
