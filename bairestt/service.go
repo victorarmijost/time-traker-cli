@@ -161,6 +161,8 @@ func (t *Bairestt) autoRefresh() {
 			break
 		}
 	}
+
+	os.Exit(0)
 }
 
 func (t *Bairestt) IsActive() bool {

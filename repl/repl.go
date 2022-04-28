@@ -65,7 +65,11 @@ func (c *Handler) runSubRutine(cmd string) {
 }
 
 func (c *Handler) getInput() string {
-	input, _ := c.reader.ReadString('\n')
+	input, err := c.reader.ReadString('\n')
+	if err != nil {
+		os.Exit(0)
+	}
+
 	input = strings.TrimRight(input, "\n")
 
 	return input
