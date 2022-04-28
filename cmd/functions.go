@@ -754,7 +754,7 @@ func DeleteStoredRecord(kern *Kernel) repl.InteractiveFunc {
 			return
 		}
 
-		r.PrintHighightedMessage("Current data")
+		r.PrintHighightedMessage("Data that will be deleted")
 
 		r.PrintMap(map[string]string{
 			"Task name":     task.Name,
@@ -763,14 +763,14 @@ func DeleteStoredRecord(kern *Kernel) repl.InteractiveFunc {
 			"Comment":       record.Comments,
 		})
 
-		cont := r.GetInput("Select an option (d: dete, q: cancel)")
+		cont := r.GetInput("Select an option (d: delete, q: cancel)")
 
 		if strings.ToLower(cont) == "q" {
 			r.PrintMessage("Canceled!")
 			return
 		}
 
-		if strings.ToLower(cont) != "e" {
+		if strings.ToLower(cont) != "d" {
 			r.PrintMessage("Wrong input!")
 			return
 		}
@@ -782,7 +782,7 @@ func DeleteStoredRecord(kern *Kernel) repl.InteractiveFunc {
 			return
 		}
 
-		r.PrintMessage("Recored deleted!")
+		r.PrintMessage("Record deleted!")
 	}
 }
 
