@@ -55,6 +55,23 @@ Some commands like: `rec` or `add` are using templates; a template is a way to p
 
 There are some templates already created under the `build/templates/rec` folder, but you can delete them and add your own templates. Use `temp list` to see all the created templates.
 
+Session management
+==
+In order to access the Time Tracker data and to be able to insert the information when you send a `commit`, the system need to log you in to the Time Tracker, this is done emulating a web session using the Google Chrome headless feature using the Chromedp go library. The first time that you login, and every time that your ***session expires***, you will be asked for your password and the login process will be executed again.
+```
+************************************************
+** Welcome to BairedDev Time Tracker CLI tool **
+************************************************
+
+- Google password:
+
+**** Performing Google login, it will take a while please wait... ****
+
+**** Login successfull!! ****
+```
+
+This is the less smooth part of the application, since emulating the login in that way is slow; even though as soon as you have a valid session you can continue working without having to login again, even you can close the application during some time, and open it again without having to login again.
+
 Workflow
 ==
 
