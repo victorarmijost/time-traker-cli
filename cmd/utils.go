@@ -61,3 +61,31 @@ func getTaskDetails(tasks []bairestt.TaskInfo, id int64) (*bairestt.TaskInfo, er
 	return nil, fmt.Errorf("not found")
 
 }
+
+func getDateFromText(sdate string) (*time.Time, error) {
+	var date time.Time
+
+	switch sdate {
+	case "now", "today", "", time.Now().Format("06-01-02"):
+		return nil, nil
+	case "yesterday":
+		date = time.Now().AddDate(0, 0, -1)
+	default:
+		val, err := strconv.Atoi(sdate)
+
+		if err == nil {
+			pdate := time.Now().AddDate(0, 0, val)
+			return &pdate, nil
+		}
+
+		pdate, err := time.Parse("06-01-02", sdate)
+
+		if err != nil {
+			return nil, err
+		}
+
+		date = pdate
+	}
+
+	return &date, nil
+}

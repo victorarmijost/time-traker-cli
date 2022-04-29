@@ -97,6 +97,11 @@ Edge cases
 
 The tool works on today's date by default; but you can use `change date` to change to another date. This can be useful to add missing records for a previous day, you must use `add` to add time on a diffent date.
 
+The `change date` command expect the date in the format `yy-mm-dd`, even though some other special syntaxes are allowed:
+1. `change date; now`, `change date; today` and `change date;`: changes the date back to the current day.
+2. `change date; yesterday`: changes the date to the previous day date.
+3. `change date; {N}`: where `{N}` is an integer number, changes the date by the specified number, for example `change date; -3`, changes the date 3 days back; and `change date; 5` change the date 5 days in the future.
+
 Batch usage
 ==
 You might need to add multiple records at the same time, in that case you can do the following:

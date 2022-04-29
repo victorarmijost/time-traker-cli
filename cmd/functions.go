@@ -308,20 +308,14 @@ func ChangeDate(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
 
-		if args["Date"] == "now" || args["Date"] == "today" ||
-			args["Date"] == "" || args["Date"] == time.Now().Format("06-01-02") {
-			state.Date = nil
-			return "Date change!", nil
-		}
-
-		date, err := time.Parse("06-01-02", args["Date"])
+		date, err := getDateFromText(args["Date"])
 
 		if err != nil {
 			err = fmt.Errorf("wrong date")
 			return "", err
 		}
 
-		state.Date = &date
+		state.Date = date
 
 		return "Date change!", nil
 	}
