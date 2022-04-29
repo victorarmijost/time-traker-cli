@@ -12,7 +12,12 @@ import (
 	"varmijo/time-tracker/localStore"
 	"varmijo/time-tracker/repl"
 	"varmijo/time-tracker/state"
+	"varmijo/time-tracker/utils"
+
+	"github.com/sirupsen/logrus"
 )
+
+const logFile = "tt.log"
 
 type Kernel struct {
 	tt      *bairestt.Bairestt
@@ -22,6 +27,9 @@ type Kernel struct {
 }
 
 func main() {
+	file := setLogger()
+	defer file.Close()
+
 	state := initState()
 	defer saveState(state)
 
@@ -185,4 +193,16 @@ func runConfig(r *repl.Handler, kern *Kernel) {
 	SetFocalPoint(kern)(ctx, r)
 	SetProject(kern)(ctx, r)
 	SetWorkingTime(kern)(ctx, r)
+}
+
+func setLogger() *os.File {
+	file, err := os.OpenFile(utils.GeAppPath(logFile), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logrus.SetOutput(file)
+	logrus.SetLevel(logrus.DebugLevel)
+
+	return file
 }

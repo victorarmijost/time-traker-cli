@@ -6,6 +6,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20220426083054-c58585551e6c
 	github.com/chromedp/chromedp v0.8.0
 	github.com/google/uuid v1.3.0
+	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
 )
 

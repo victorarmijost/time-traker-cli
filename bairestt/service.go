@@ -14,7 +14,6 @@ import (
 
 type Bairestt struct {
 	client *client
-	debug  bool
 	email  string
 	cache  *cache
 }
