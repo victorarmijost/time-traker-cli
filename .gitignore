@@ -18,3 +18,6 @@ build/.tmp
 build/local
 build/test
 .gitconfig.time-tracker-cli
+
+*.png
+*.log

@@ -81,7 +81,7 @@ func (t *Bairestt) emulate_login(ctx context.Context, password string) (string, 
 	//Handle the login form
 	var buf []byte
 	if err := chromedp.Run(newCtx,
-		chromedp.WaitReady(`Correo electrónico o teléfono`, chromedp.BySearch),
+		chromedp.WaitReady(`Email`, chromedp.ByID),
 		chromedp.FullScreenshot(&buf, 100),
 	); err != nil {
 		return "", fmt.Errorf("error handling login popup email, %w", err)
@@ -94,8 +94,8 @@ func (t *Bairestt) emulate_login(ctx context.Context, password string) (string, 
 	}
 
 	if err := chromedp.Run(newCtx,
-		chromedp.SendKeys(`Correo electrónico o teléfono`, t.email, chromedp.BySearch),
-		chromedp.Click(`Siguiente`, chromedp.BySearch, chromedp.NodeVisible),
+		chromedp.SendKeys(`Email`, t.email, chromedp.ByID),
+		chromedp.Click(`next`, chromedp.ByID, chromedp.NodeVisible),
 	); err != nil {
 		return "", fmt.Errorf("error handling login popup email, %w", err)
 	}
@@ -104,7 +104,7 @@ func (t *Bairestt) emulate_login(ctx context.Context, password string) (string, 
 
 	//Handle the login form
 	if err := chromedp.Run(newCtx,
-		chromedp.WaitReady(`Enter your password`, chromedp.BySearch),
+		chromedp.WaitReady(`password`, chromedp.ByID),
 		chromedp.FullScreenshot(&buf, 100),
 	); err != nil {
 		return "", fmt.Errorf("error handling login popup password, %w", err)
@@ -117,7 +117,7 @@ func (t *Bairestt) emulate_login(ctx context.Context, password string) (string, 
 	}
 
 	if err := chromedp.Run(newCtx,
-		chromedp.SendKeys(`Passwd`, password, chromedp.BySearch),
+		chromedp.SendKeys(`password`, password, chromedp.ByID),
 		chromedp.Submit(`submit`, chromedp.ByID, chromedp.NodeVisible),
 		chromedp.WaitNotPresent(`submit`, chromedp.ByID),
 		chromedp.WaitReady(`submit_approve_access`, chromedp.ByID),
