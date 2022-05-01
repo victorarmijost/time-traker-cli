@@ -27,9 +27,6 @@ type Kernel struct {
 }
 
 func main() {
-	file := setLogger()
-	defer file.Close()
-
 	state := initState()
 	defer saveState(state)
 
@@ -38,6 +35,9 @@ func main() {
 	cmds.PrintTitle("Welcome to BairedDev Time Tracker CLI tool")
 
 	config := initConfig(cmds)
+
+	file := setLogger(config.LogLevel)
+	defer file.Close()
 
 	tt := login(config, cmds)
 
@@ -195,14 +195,22 @@ func runConfig(r *repl.Handler, kern *Kernel) {
 	SetWorkingTime(kern)(ctx, r)
 }
 
-func setLogger() *os.File {
+func setLogger(slevel string) *os.File {
 	file, err := os.OpenFile(utils.GeAppPath(logFile), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	logrus.SetOutput(file)
-	logrus.SetLevel(logrus.DebugLevel)
+
+	level, err := logrus.ParseLevel(slevel)
+
+	if err != nil {
+		logrus.SetLevel(logrus.ErrorLevel)
+		return file
+	}
+
+	logrus.SetLevel(level)
 
 	return file
 }

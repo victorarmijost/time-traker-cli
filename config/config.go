@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	LogLevel     string  `json:"log_level"`
 	ProjectId    int64   `json:"projectId"`
 	FocalPointId int64   `json:"focalPointId"`
 	WorkingTime  float32 `json:"workingTime"`
@@ -17,7 +18,9 @@ type Config struct {
 const ConfigFileName = "config.json"
 
 func NewConfig() *Config {
-	return &Config{}
+	return &Config{
+		LogLevel: "error",
+	}
 }
 
 func (s *Config) IsComplete() bool {
