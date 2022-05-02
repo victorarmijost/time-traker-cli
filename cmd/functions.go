@@ -97,6 +97,7 @@ func StartRecord(kern *Kernel) repl.ActionFuncExt {
 		}
 
 		state := kern.state
+		defer state.Save()
 
 		descId, err := validateDescriptionId(tasks, args["Id"])
 
@@ -122,11 +123,14 @@ func StopRecord(kern *Kernel) repl.ActionFunc {
 			return "", err
 		}
 
+		state := kern.state
+		defer state.Save()
+
 		descId := currentTask.Id
 		comment := currentTask.Comment
 		recDate := currentTask.StartTime
 
-		hours, err := kern.state.EndRecord(nil)
+		hours, err := state.EndRecord(nil)
 
 		if err != nil {
 			return "", err
@@ -160,6 +164,7 @@ func StopRecord(kern *Kernel) repl.ActionFunc {
 func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
+		defer state.Save()
 
 		currentTask, err := state.GetCurrentTask()
 
@@ -307,6 +312,7 @@ func ListLocal(kern *Kernel) repl.ActionFunc {
 func ChangeDate(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
+		defer state.Save()
 
 		date, err := getDateFromText(args["Date"])
 
@@ -324,6 +330,7 @@ func ChangeDate(kern *Kernel) repl.ActionFuncExt {
 func DropRecord(kern *Kernel) repl.ActionFunc {
 	return func(ctx context.Context) (string, error) {
 		state := kern.state
+		defer state.Save()
 
 		currentTask, err := state.GetCurrentTask()
 
@@ -352,6 +359,7 @@ func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
 		}
 
 		state := kern.state
+		defer state.Save()
 
 		descId, err := validateDescriptionId(tasks, args["Id"])
 
@@ -384,6 +392,7 @@ func EditRecord(kern *Kernel) repl.ActionFuncExt {
 		}
 
 		state := kern.state
+		defer state.Save()
 
 		descId, err := validateDescriptionId(tasks, args["Id"])
 
