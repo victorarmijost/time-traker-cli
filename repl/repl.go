@@ -7,9 +7,13 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
+
+	"golang.org/x/term"
 )
 
 type Handler struct {
+	terminal *term.Terminal
 	cmds     map[string]SubRutine
 	reader   *bufio.Reader
 	prompt   Prompt
@@ -17,14 +21,21 @@ type Handler struct {
 	cmdsHelp map[string]string
 }
 
-func NewHandler(prompt Prompt, exit string) *Handler {
-	return &Handler{
+func NewHandler(prompt Prompt, exit string) (*Handler, CloseTerm) {
+	term, close := setupTerm()
+
+	h := &Handler{
+		terminal: term,
 		cmds:     map[string]SubRutine{},
 		reader:   bufio.NewReader(os.Stdin),
 		prompt:   prompt,
 		exit:     exit,
 		cmdsHelp: map[string]string{},
 	}
+
+	go h.updatePromptBackground()
+
+	return h, close
 }
 
 func (c *Handler) Handle(name string, sr SubRutine) {
@@ -65,22 +76,31 @@ func (c *Handler) runSubRutine(cmd string) {
 }
 
 func (c *Handler) getInput() string {
-	input, err := c.reader.ReadString('\n')
+	input, err := c.readTermLine()
 	if err != nil {
 		os.Exit(0)
 	}
 
-	input = strings.TrimRight(input, "\n")
-
 	return input
 }
 
-func (c *Handler) printRepl() {
-	fmt.Printf("%s > ", c.prompt())
+func (c *Handler) updatePromptBackground() {
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			c.printPrompt()
+			c.terminal.Write([]byte{})
+		}
+	}()
+}
+
+func (c *Handler) printPrompt() {
+	c.setTermPrompt(fmt.Sprintf("%s > ", c.prompt()))
+
 }
 
 func (c *Handler) replIter() string {
-	c.printRepl()
+	c.printPrompt()
 	return c.getInput()
 }
 
@@ -130,6 +150,6 @@ func (c *Handler) help() {
 	i := 0
 	for _, cmd := range keys {
 		i++
-		fmt.Printf("%d. {{ %s }} : %s\n\n", i, cmd, c.getHelp(cmd))
+		fmt.Fprintf(c.terminal, "%d. {{ %s }} : %s\n\n", i, cmd, c.getHelp(cmd))
 	}
 }

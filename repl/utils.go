@@ -63,7 +63,7 @@ func SprintMap(m map[string]string) string {
 }
 
 func (c *Handler) GetPass(prompt string) string {
-	fmt.Printf("- %s: ", prompt)
+	fmt.Fprintf(c.terminal, "- %s: ", prompt)
 	pass, err := term.ReadPassword(0)
 	c.Br()
 	c.Br()
@@ -80,36 +80,36 @@ func (c *Handler) PrintError(err error) {
 }
 
 func (c *Handler) PrintErrorMsg(msg string) {
-	c.PrintMessage(fmt.Sprintf("<< ERROR: %s >>", msg))
+	c.PrintMessage(c.colorString(fmt.Sprintf("<< ERROR: %s >>", msg), RED))
 }
 
 func (c *Handler) PrintMessage(msg string) {
-	fmt.Println(msg)
+	fmt.Fprintln(c.terminal, msg)
 	c.Br()
 }
 
 func (c *Handler) PrintInfoMessage(msg string) {
 	lines := strings.Split(msg, "\n")
 	if len(lines) == 1 {
-		c.PrintMessage(fmt.Sprintf("**** %s ****", msg))
+		c.PrintMessage(c.colorString(fmt.Sprintf("**** %s ****", msg), BLUE))
 	} else {
 		c.PrintHighightedMessage("Result")
 		for _, l := range lines {
-			fmt.Println(l)
+			fmt.Fprintln(c.terminal, l)
 		}
 		c.Br()
 	}
 }
 
 func (c *Handler) PrintTitle(msg string) {
-	fmt.Println(strings.Repeat("*", len(msg)+6))
-	fmt.Printf("** %s **\n", msg)
-	fmt.Println(strings.Repeat("*", len(msg)+6))
+	fmt.Fprintln(c.terminal, c.colorString(strings.Repeat("*", len(msg)+6), CYAN))
+	fmt.Fprintf(c.terminal, c.colorString("** %s **\n", CYAN), msg)
+	fmt.Fprintln(c.terminal, c.colorString(strings.Repeat("*", len(msg)+6), CYAN))
 	c.Br()
 }
 
 func (c *Handler) GetInput(msg string) string {
-	fmt.Printf("- %s: ", msg)
+	fmt.Fprintf(c.terminal, "- %s: ", msg)
 	r := c.getInput()
 	c.Br()
 	return r
@@ -130,7 +130,7 @@ func (c *Handler) SelectFromList(l Selectable) int {
 
 	selectMap := map[string]int{}
 	for i := 0; i < l.Size(); i++ {
-		fmt.Printf("%d. %s\n", i+1, l.GetElement(i))
+		fmt.Fprintf(c.terminal, "%d. %s\n", i+1, l.GetElement(i))
 		selectMap[strconv.Itoa(i+1)] = i
 	}
 
@@ -159,8 +159,8 @@ type Searchable interface {
 }
 
 func (c *Handler) PrintHighightedMessage(message string) {
-	fmt.Println(message)
-	fmt.Print(strings.Repeat("=", len(message)))
+	fmt.Fprintln(c.terminal, c.colorString(message, BLUE))
+	fmt.Fprint(c.terminal, c.colorString(strings.Repeat("=", len(message)), BLUE))
 	c.Br()
 }
 
@@ -174,7 +174,7 @@ func (c *Handler) SearchFromList(prompt string, l Searchable) int {
 	for i := 0; i < l.Size(); i++ {
 		if l.Match(i, input) {
 			pi++
-			fmt.Printf("%d. %s\n", pi, l.GetElement(i))
+			fmt.Fprintf(c.terminal, "%d. %s\n", pi, l.GetElement(i))
 			selectMap[strconv.Itoa(pi)] = i
 		}
 	}
@@ -204,5 +204,5 @@ func (c *Handler) SearchFromList(prompt string, l Searchable) int {
 }
 
 func (c *Handler) Br() {
-	fmt.Println()
+	fmt.Fprintln(c.terminal)
 }

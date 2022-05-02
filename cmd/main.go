@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"time"
 	"varmijo/time-tracker/bairestt"
 	"varmijo/time-tracker/config"
-	"varmijo/time-tracker/localStore"
 	"varmijo/time-tracker/repl"
 	"varmijo/time-tracker/state"
 	"varmijo/time-tracker/utils"
@@ -30,7 +28,8 @@ func main() {
 	state := initState()
 	defer saveState(state)
 
-	cmds := initCmds(state)
+	cmds, closeTerm := initCmds(state)
+	defer closeTerm()
 
 	cmds.PrintTitle("Welcome to BairedDev Time Tracker CLI tool")
 
@@ -45,8 +44,7 @@ func main() {
 	err := recTemp.Load()
 
 	if err != nil {
-		fmt.Println("Warning: there is no record tamplete created")
-		fmt.Println()
+		cmds.PrintErrorMsg("Warning: there is no record tamplete created")
 	}
 
 	kern := &Kernel{
@@ -101,10 +99,10 @@ func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
 	return tt
 }
 
-func initCmds(state *state.State) *repl.Handler {
-	cmds := repl.NewHandler(getPrompt(state), "exit")
+func initCmds(state *state.State) (*repl.Handler, repl.CloseTerm) {
+	cmds, close := repl.NewHandler(getPrompt(state), "exit")
 
-	return cmds
+	return cmds, close
 }
 
 func initState() *state.State {
@@ -149,41 +147,6 @@ func saveState(state *state.State) {
 	err := state.Save()
 	if err != nil {
 		log.Fatal(err)
-	}
-}
-
-func getPrompt(state *state.State) repl.Prompt {
-	return func() string {
-		statusBar := ""
-
-		wt := localStore.GetTimeByStatus(state.Date, localStore.StatusPending)
-		if wt > 0 {
-			statusBar = fmt.Sprintf("[Worked:%.2f]", wt)
-		}
-
-		ct := localStore.GetTimeByStatus(state.Date, localStore.StatusCommited)
-		if ct > 0 {
-			statusBar = fmt.Sprintf("%s[Commited:%.2f]", statusBar, ct)
-		}
-
-		pt := localStore.GetTimeByStatus(nil, localStore.StatusPool)
-		if pt > 0 {
-			statusBar = fmt.Sprintf("%s[Pool:%.2f]", statusBar, pt)
-		}
-
-		if state.IsWorking() {
-			statusBar = fmt.Sprintf("%s[Tracking:%.2f]", statusBar, state.GetTaskTime(nil))
-		}
-
-		if state.Date != nil {
-			statusBar = fmt.Sprintf("%s[%s]", statusBar, state.Date.Format("06-01-02"))
-		}
-
-		if statusBar != "" {
-			return fmt.Sprintf("%s tt", statusBar)
-		}
-
-		return "tt"
 	}
 }
 
