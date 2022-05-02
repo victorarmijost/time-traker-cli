@@ -7,7 +7,14 @@ import (
 type ActionFunc func(ctx context.Context) (string, error)
 type ActionFuncExt func(ctx context.Context, args map[string]string) (string, error)
 
-type Prompt func() string
+type PromptType uint32
+
+const (
+	FULL_UPDATE PromptType = iota
+	SOFT_UPDATE
+)
+
+type Prompt func(PromptType) string
 
 type withArgsFunc struct {
 	Func      ActionFuncExt

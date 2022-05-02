@@ -9,27 +9,33 @@ import (
 	"varmijo/time-tracker/state"
 )
 
+var wt, ct, pt, tt float32
+
 func getPrompt(state *state.State) repl.Prompt {
-	return func() string {
+	return func(pk repl.PromptType) string {
+		if pk == repl.FULL_UPDATE {
+			wt = localStore.GetTimeByStatus(state.Date, localStore.StatusPending)
+			ct = localStore.GetTimeByStatus(state.Date, localStore.StatusCommited)
+			pt = localStore.GetTimeByStatus(nil, localStore.StatusPool)
+			tt = state.GetTaskTime(nil)
+		}
+
 		statusBar := ""
 
-		wt := localStore.GetTimeByStatus(state.Date, localStore.StatusPending)
 		if wt > 0 {
 			statusBar = fmt.Sprintf("[Worked:%.2f]", wt)
 		}
 
-		ct := localStore.GetTimeByStatus(state.Date, localStore.StatusCommited)
 		if ct > 0 {
 			statusBar = fmt.Sprintf("%s[Commited:%.2f]", statusBar, ct)
 		}
 
-		pt := localStore.GetTimeByStatus(nil, localStore.StatusPool)
 		if pt > 0 {
 			statusBar = fmt.Sprintf("%s[Pool:%.2f]", statusBar, pt)
 		}
 
 		if state.IsWorking() {
-			statusBar = fmt.Sprintf("%s[Tracking:%.2f][%s]", statusBar, state.GetTaskTime(nil), getClockEmoji())
+			statusBar = fmt.Sprintf("%s[Tracking:%.2f][%s]", statusBar, tt, getClockEmoji())
 		}
 
 		if state.Date != nil {

@@ -85,22 +85,31 @@ func (c *Handler) getInput() string {
 }
 
 func (c *Handler) updatePromptBackground() {
+	const hardUpdateCount = 60
+
+	count := hardUpdateCount
 	go func() {
 		for {
 			time.Sleep(1 * time.Second)
-			c.printPrompt()
+			if count <= 0 {
+				c.printPrompt(FULL_UPDATE)
+				count = hardUpdateCount
+			} else {
+				c.printPrompt(SOFT_UPDATE)
+				count--
+			}
 			c.terminal.Write([]byte{})
 		}
 	}()
 }
 
-func (c *Handler) printPrompt() {
-	c.setTermPrompt(fmt.Sprintf("%s > ", c.prompt()))
+func (c *Handler) printPrompt(t PromptType) {
+	c.setTermPrompt(fmt.Sprintf("%s > ", c.prompt(t)))
 
 }
 
 func (c *Handler) replIter() string {
-	c.printPrompt()
+	c.printPrompt(FULL_UPDATE)
 	return c.getInput()
 }
 
