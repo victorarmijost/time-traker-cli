@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 	"varmijo/time-tracker/utils"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Bairestt struct {
@@ -147,6 +149,7 @@ func (t *Bairestt) refresh(ctx context.Context) error {
 }
 
 func (t *Bairestt) autoRefresh() {
+	err_count := 3
 	for {
 		time.Sleep(30 * time.Minute)
 
@@ -156,12 +159,14 @@ func (t *Bairestt) autoRefresh() {
 		err := t.refresh(ctx)
 
 		if err != nil {
-			log.Println("Token expired, login again")
+			err_count--
+			logrus.Error("token refresh failed, %w", err)
+		}
+
+		if err_count <= 0 {
 			break
 		}
 	}
-
-	os.Exit(0)
 }
 
 func (t *Bairestt) IsActive() bool {
