@@ -261,11 +261,14 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 				}
 			}
 
-			_, err = tt.AddRecord(ctx, &record.TimeRecord)
+			//If the record is 0 size, is marked as commited, but is not sent
+			if record.TimeRecord.Hours > 0 {
+				_, err = tt.AddRecord(ctx, &record.TimeRecord)
 
-			if err != nil {
-				err := fmt.Errorf("error commiting new record, %w", err)
-				return "", err
+				if err != nil {
+					err := fmt.Errorf("error commiting new record, %w", err)
+					return "", err
+				}
 			}
 
 			err = localStore.SetCommit(state.Date, f)
