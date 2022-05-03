@@ -11,9 +11,9 @@ import (
 type TimeRounder func(float32) float32
 
 type State struct {
-	Date            *time.Time `json:"date"`
-	CurrentTask     *Task      `json:"currentTask"`
-	TaskTimeRounder TimeRounder
+	Date            *time.Time  `json:"date"`
+	CurrentTask     *Task       `json:"currentTask"`
+	TaskTimeRounder TimeRounder `json:"-"`
 }
 
 type Task struct {
