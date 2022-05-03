@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"math"
 	"os"
 	"time"
 	"varmijo/time-tracker/bairestt"
@@ -63,6 +64,7 @@ func main() {
 	cmds.Repl()
 }
 
+//Runs the application login
 func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -99,14 +101,21 @@ func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
 	return tt
 }
 
+//Creates the Cmds object, which is in charge of the CLI.
 func initCmds(state *state.State) (*repl.Handler, repl.CloseTerm) {
 	cmds, close := repl.NewHandler(getPrompt(state), "exit")
 
 	return cmds, close
 }
 
+//Defines how the tasks time is rounded
+func timeRounding(time float32) float32 {
+	return float32(math.Round(float64(time)/0.25) * 0.25)
+}
+
+//The state store the information of the current worked task
 func initState() *state.State {
-	state := state.NewState()
+	state := state.NewState(timeRounding)
 
 	err := state.Load()
 
@@ -121,6 +130,7 @@ func initState() *state.State {
 	return state
 }
 
+//The configuration stores all the application configurable values
 func initConfig(r *repl.Handler) *config.Config {
 	c := config.NewConfig()
 
@@ -143,6 +153,7 @@ func initConfig(r *repl.Handler) *config.Config {
 	return c
 }
 
+//Save the state before exit
 func saveState(state *state.State) {
 	err := state.Save()
 	if err != nil {
@@ -150,6 +161,7 @@ func saveState(state *state.State) {
 	}
 }
 
+//Runs all the application initial configurations
 func runConfig(r *repl.Handler, kern *Kernel) {
 	ctx := context.Background()
 
@@ -158,6 +170,7 @@ func runConfig(r *repl.Handler, kern *Kernel) {
 	SetWorkingTime(kern)(ctx, r)
 }
 
+//Set up the application logger
 func setLogger(slevel string) *os.File {
 	file, err := os.OpenFile(utils.GeAppPath(logFile), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {

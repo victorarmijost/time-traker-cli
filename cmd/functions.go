@@ -46,11 +46,13 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 			return "", err
 		}
 
-		hours, err := formatWorkHours(args["Hours"])
+		phours, err := strconv.ParseFloat(args["Hours"], 32)
 
 		if err != nil {
 			return "", err
 		}
+
+		hours := kern.state.TaskTimeRounder(float32(phours))
 
 		var recDate time.Time
 		if kern.state.Date == nil {

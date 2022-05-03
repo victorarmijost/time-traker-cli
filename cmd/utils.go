@@ -2,21 +2,10 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"time"
 	"varmijo/time-tracker/bairestt"
 )
-
-func formatWorkHours(shours string) (float32, error) {
-	hours, err := strconv.ParseFloat(shours, 32)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return float32(math.Ceil(hours/0.25) * 0.25), nil
-}
 
 func parseHour(shour string) (*time.Time, error) {
 	date := time.Now()

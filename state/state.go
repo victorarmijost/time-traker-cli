@@ -3,15 +3,17 @@ package state
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"os"
 	"time"
 	"varmijo/time-tracker/utils"
 )
 
+type TimeRounder func(float32) float32
+
 type State struct {
-	Date        *time.Time `json:"date"`
-	CurrentTask *Task      `json:"currentTask"`
+	Date            *time.Time `json:"date"`
+	CurrentTask     *Task      `json:"currentTask"`
+	TaskTimeRounder TimeRounder
 }
 
 type Task struct {
@@ -20,8 +22,10 @@ type Task struct {
 	StartTime time.Time `json:"startTime"`
 }
 
-func NewState() *State {
-	return &State{}
+func NewState(round TimeRounder) *State {
+	return &State{
+		TaskTimeRounder: round,
+	}
 }
 
 const statePath = ".tmp"
@@ -42,7 +46,11 @@ func (s *State) Load() error {
 		return err
 	}
 
+	rounder := s.TaskTimeRounder
+
 	*s = *newState
+
+	s.TaskTimeRounder = rounder
 
 	return nil
 }
@@ -97,10 +105,10 @@ func (s *State) EndRecord(et *time.Time) (float32, error) {
 func (s *State) GetTaskTime(et *time.Time) float32 {
 	if s.IsWorking() {
 		if et == nil {
-			return float32(math.Ceil(time.Since(s.CurrentTask.StartTime).Hours()/0.25) * 0.25)
+			return s.TaskTimeRounder(float32(time.Since(s.CurrentTask.StartTime).Hours()))
 		}
 
-		return float32(math.Ceil(et.Sub(s.CurrentTask.StartTime).Hours()/0.25) * 0.25)
+		return s.TaskTimeRounder(float32(et.Sub(s.CurrentTask.StartTime).Hours()))
 	}
 
 	return 0
