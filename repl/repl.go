@@ -84,6 +84,8 @@ func (c *Handler) getInput() string {
 	return input
 }
 
+var promptLock bool
+
 func (c *Handler) updatePromptBackground() {
 	const hardUpdateCount = 60
 
@@ -91,6 +93,11 @@ func (c *Handler) updatePromptBackground() {
 	go func() {
 		for {
 			time.Sleep(1 * time.Second)
+
+			if promptLock {
+				continue
+			}
+
 			if count <= 0 {
 				c.printPrompt(FULL_UPDATE)
 				count = hardUpdateCount

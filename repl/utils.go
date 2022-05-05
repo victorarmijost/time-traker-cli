@@ -109,9 +109,11 @@ func (c *Handler) PrintTitle(msg string) {
 }
 
 func (c *Handler) GetInput(msg string) string {
-	fmt.Fprintf(c.terminal, "- %s: ", msg)
+	promptLock = true
+	c.setTermPrompt(fmt.Sprintf("- %s: ", msg))
 	r := c.getInput()
 	c.Br()
+	promptLock = false
 	return r
 }
 
