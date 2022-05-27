@@ -72,8 +72,15 @@ func (t *Bairestt) emulate_login(ctx context.Context, password string) (string, 
 
 	logrus.Debug("waiting for popup login form")
 
+	var tid target.ID
+	select {
+	case tid = <-ch:
+	case <-time.After(10 * time.Second):
+		logrus.Fatal("login popup timeout")
+	}
+
 	//Waits for the popup and attach it
-	newCtx, cancelNew := chromedp.NewContext(ctx, chromedp.WithTargetID(<-ch))
+	newCtx, cancelNew := chromedp.NewContext(ctx, chromedp.WithTargetID(tid))
 	defer cancelNew()
 
 	logrus.Debug("sending email")
