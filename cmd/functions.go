@@ -283,6 +283,40 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 	}
 }
 
+func SendToPool(kern *Kernel) repl.ActionFunc {
+	return func(ctx context.Context) (string, error) {
+		state := kern.state
+
+		files, err := localStore.ListByStatus(state.Date, localStore.StatusPending)
+
+		if err != nil {
+			return "", err
+		}
+
+		for _, f := range files {
+			record, err := localStore.Get(state.Date, f)
+			if err != nil {
+				return "", err
+			}
+
+			newRecord := *record
+			newRecord.Hours = record.Hours
+
+			err = localStore.SaveToPool(&newRecord)
+			if err != nil {
+				return "", err
+			}
+
+			err = localStore.DeleteRecord(&record.Date, record.Id)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		return "Records saved to pool!", nil
+	}
+}
+
 func ListLocal(kern *Kernel) repl.ActionFunc {
 	return func(ctx context.Context) (string, error) {
 		state := kern.state
