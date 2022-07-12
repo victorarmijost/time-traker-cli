@@ -61,6 +61,10 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 			recDate = *kern.state.Date
 		}
 
+		if len(args["Comment"]) < 10 {
+			return "", fmt.Errorf("comment must have more than 10 characters")
+		}
+
 		//Pending - Hardcoded record type 1
 		record := &localStore.Record{
 			TimeRecord: bairestt.TimeRecord{
@@ -105,6 +109,10 @@ func StartRecord(kern *Kernel) repl.ActionFuncExt {
 
 		if err != nil {
 			return "", err
+		}
+
+		if len(args["Comment"]) < 10 {
+			return "", fmt.Errorf("comment must have more than 10 characters")
 		}
 
 		err = state.StartRecord(descId, args["Comment"], nil)
@@ -412,6 +420,10 @@ func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
 			return "", err
 		}
 
+		if len(args["Comment"]) < 10 {
+			return "", fmt.Errorf("comment must have more than 10 characters")
+		}
+
 		err = state.StartRecord(descId, args["Comment"], recDate)
 
 		if err != nil {
@@ -451,6 +463,10 @@ func EditRecord(kern *Kernel) repl.ActionFuncExt {
 
 		if err != nil {
 			return "", err
+		}
+
+		if len(args["Comment"]) < 10 {
+			return "", fmt.Errorf("comment must have more than 10 characters")
 		}
 
 		err = state.StartRecord(descId, args["Comment"], &date)

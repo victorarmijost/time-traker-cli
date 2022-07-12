@@ -238,14 +238,14 @@ func (t *Bairestt) AddRecord(ctx context.Context, record *TimeRecord) (*RecordRe
 		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("add record fail with code: %d", res.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
 		return nil, fmt.Errorf("error reading response")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("add record fail with code: %d, %s", res.StatusCode, string(body))
 	}
 
 	respRecord := &RecordResponse{}
