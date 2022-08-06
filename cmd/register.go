@@ -33,6 +33,9 @@ func registerFunctions(cmds *repl.Handler, kern *Kernel) {
 	cmds.Handle("temp add", CreateTemplate(kern))
 	cmds.Handle("temp list", ListTemplates(kern))
 
+	//Login
+	cmds.Handle("login", Loggin(kern))
+
 	addHelp(cmds)
 }
 
@@ -62,4 +65,7 @@ func addHelp(cmds *repl.Handler) {
 	//Templates
 	cmds.Help("temp add", "Adds a new record template.")
 	cmds.Help("temp list", "List all the existing templates.")
+
+	//Login
+	cmds.Help("login", "Logins to Google")
 }

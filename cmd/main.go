@@ -86,14 +86,28 @@ func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
 		pass = cmds.GetPass("Google password")
 	}
 
-	ctx, cancelPass := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancelPass()
+	tt = loginWithPass(pass, tt, cmds)
 
+	return tt
+}
+
+func loginWithPass(pass string, tt *bairestt.Bairestt, cmds *repl.Handler) *bairestt.Bairestt {
 	cmds.PrintInfoMessage("Performing Google login, it will take a while please wait...")
-	err = tt.StartWithPass(ctx, pass)
 
-	if err != nil {
-		log.Fatal(err)
+	for {
+		cmds.PrintInfoMessage("Peforming logging attempt")
+
+		ctx, cancelPass := context.WithTimeout(context.Background(), 30*time.Second)
+
+		err := tt.StartWithPass(ctx, pass)
+
+		cancelPass()
+
+		if err != nil {
+			cmds.PrintError(err)
+		} else {
+			break
+		}
 	}
 
 	cmds.PrintInfoMessage("Login successfull!!")

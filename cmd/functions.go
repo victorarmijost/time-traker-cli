@@ -854,3 +854,9 @@ func PourePool(kern *Kernel) repl.ActionFunc {
 		return "Pool poured!", nil
 	}
 }
+
+func Loggin(kern *Kernel) repl.InteractiveFunc {
+	return func(ctx context.Context, r *repl.Handler) {
+		loginWithPass(kern.config.Password, kern.tt, r)
+	}
+}
