@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -94,7 +95,8 @@ func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
 func loginWithPass(pass string, tt *bairestt.Bairestt, cmds *repl.Handler) *bairestt.Bairestt {
 	cmds.PrintInfoMessage("Performing Google login, it will take a while please wait...")
 
-	for {
+	logged := false
+	for count := 0; count < 3; count++ {
 		cmds.PrintInfoMessage("Peforming logging attempt")
 
 		ctx, cancelPass := context.WithTimeout(context.Background(), 30*time.Second)
@@ -106,11 +108,17 @@ func loginWithPass(pass string, tt *bairestt.Bairestt, cmds *repl.Handler) *bair
 		if err != nil {
 			cmds.PrintError(err)
 		} else {
+			logged = true
 			break
 		}
 	}
 
-	cmds.PrintInfoMessage("Login successfull!!")
+	if !logged {
+		cmds.PrintError(fmt.Errorf("can't log in"))
+		os.Exit(1)
+	}
+
+	cmds.PrintInfoMessage("Log in successfull!!")
 
 	return tt
 }
