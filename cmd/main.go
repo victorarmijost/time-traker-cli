@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"math"
@@ -27,6 +28,11 @@ type Kernel struct {
 }
 
 func main() {
+	var login bool
+	flag.BoolVar(&login, "l", false, "Attempts login if the access token is expired")
+
+	flag.Parse()
+
 	state := initState()
 	defer saveState(state)
 
@@ -40,7 +46,7 @@ func main() {
 	file := setLogger(config.LogLevel)
 	defer file.Close()
 
-	tt := login(config, cmds)
+	tt := initTimeTracker(config, cmds, login)
 
 	recTemp := repl.NewTemplateHandler("rec")
 	err := recTemp.Load()
@@ -65,8 +71,8 @@ func main() {
 	cmds.Repl()
 }
 
-//Runs the application login
-func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
+//Runs the application initTimeTracker
+func initTimeTracker(config *config.Config, cmds *repl.Handler, login bool) *bairestt.Bairestt {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -78,7 +84,7 @@ func login(config *config.Config, cmds *repl.Handler) *bairestt.Bairestt {
 
 	err := tt.Start(ctx)
 
-	if err == nil {
+	if !login || err == nil {
 		return tt
 	}
 
@@ -115,7 +121,7 @@ func loginWithPass(pass string, tt *bairestt.Bairestt, cmds *repl.Handler) *bair
 
 	if !logged {
 		cmds.PrintError(fmt.Errorf("can't log in"))
-		os.Exit(1)
+		return tt
 	}
 
 	cmds.PrintInfoMessage("Log in successfull!!")

@@ -35,6 +35,7 @@ func registerFunctions(cmds *repl.Handler, kern *Kernel) {
 
 	//Login
 	cmds.Handle("login", Loggin(kern))
+	cmds.Handle("set token", SetToken(kern).WithArgs(nil, "Token"))
 
 	addHelp(cmds)
 }
@@ -68,4 +69,5 @@ func addHelp(cmds *repl.Handler) {
 
 	//Login
 	cmds.Help("login", "Logins to Google")
+	cmds.Help("set token", "Set a new Google token")
 }

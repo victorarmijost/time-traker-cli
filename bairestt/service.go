@@ -148,6 +148,13 @@ func (t *Bairestt) refresh(ctx context.Context) error {
 	return nil
 }
 
+func (t *Bairestt) SetToken(token string) error {
+	t.client.SetToken(token)
+	t.cache.Token = token
+
+	return t.saveCache()
+}
+
 func (t *Bairestt) autoRefresh() {
 	err_count := 3
 	for {

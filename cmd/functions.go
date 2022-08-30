@@ -860,3 +860,17 @@ func Loggin(kern *Kernel) repl.InteractiveFunc {
 		loginWithPass(kern.config.Password, kern.tt, r)
 	}
 }
+
+func SetToken(kern *Kernel) repl.ActionFuncExt {
+	return func(ctx context.Context, args map[string]string) (string, error) {
+		if args["Token"] == "" {
+			return "", fmt.Errorf("empty token")
+		}
+
+		err := kern.tt.SetToken(args["Token"])
+		if err != nil {
+			return "", err
+		}
+		return "token set", nil
+	}
+}
