@@ -97,6 +97,11 @@ func (s *State) EndRecord(et *time.Time) (float32, error) {
 	}
 
 	time := s.GetTaskTime(et)
+
+	if time < 0 {
+		return 0, fmt.Errorf("wrong end time")
+	}
+
 	s.CurrentTask = nil
 
 	return time, nil

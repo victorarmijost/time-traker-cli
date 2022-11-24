@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/term"
 )
@@ -91,7 +92,7 @@ func (c *Handler) PrintMessage(msg string) {
 func (c *Handler) PrintInfoMessage(msg string) {
 	lines := strings.Split(msg, "\n")
 	if len(lines) == 1 {
-		c.PrintMessage(c.colorString(fmt.Sprintf("**** %s ****", msg), BLUE))
+		c.PrintMessage(c.colorString(fmt.Sprintf("[%s] **** %s ****", time.Now().Format("2006-01-02 15:04:05"), msg), BLUE))
 	} else {
 		c.PrintHighightedMessage("Result")
 		for _, l := range lines {

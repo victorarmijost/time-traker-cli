@@ -15,9 +15,10 @@ import (
 )
 
 type Bairestt struct {
-	client *client
-	email  string
-	cache  *cache
+	client        *client
+	email         string
+	cache         *cache
+	isAutoRefresh bool
 }
 
 type cache struct {
@@ -152,10 +153,19 @@ func (t *Bairestt) SetToken(token string) error {
 	t.client.SetToken(token)
 	t.cache.Token = token
 
+	go t.autoRefresh()
+
 	return t.saveCache()
 }
 
 func (t *Bairestt) autoRefresh() {
+	if t.isAutoRefresh {
+		logrus.Info("auto refresh already running")
+		return
+	}
+
+	t.isAutoRefresh = true
+
 	err_count := 3
 	for {
 		time.Sleep(30 * time.Minute)
@@ -167,13 +177,18 @@ func (t *Bairestt) autoRefresh() {
 
 		if err != nil {
 			err_count--
-			logrus.Error("token refresh failed, %w", err)
+			logrus.Error("token refresh failed, %v", err)
+		} else {
+			err_count = 3
+			logrus.Info("token renewed!")
 		}
 
 		if err_count <= 0 {
 			break
 		}
 	}
+
+	t.isAutoRefresh = false
 }
 
 func (t *Bairestt) IsActive() bool {
