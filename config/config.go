@@ -7,12 +7,8 @@ import (
 )
 
 type Config struct {
-	LogLevel     string  `json:"log_level"`
-	ProjectId    int64   `json:"projectId"`
-	FocalPointId int64   `json:"focalPointId"`
-	WorkingTime  float32 `json:"workingTime"`
-	Email        string  `json:"email"`
-	Password     string  `json:"password"`
+	LogLevel    string  `json:"log_level"`
+	WorkingTime float32 `json:"workingTime"`
 }
 
 const ConfigFileName = "config.json"
@@ -24,15 +20,7 @@ func NewConfig() *Config {
 }
 
 func (s *Config) IsComplete() bool {
-	if s.ProjectId == 0 {
-		return false
-	}
-
-	if s.FocalPointId == 0 {
-		return false
-	}
-
-	if s.Email == "" {
+	if s.WorkingTime == 0 {
 		return false
 	}
 

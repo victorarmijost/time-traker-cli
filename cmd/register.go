@@ -7,19 +7,16 @@ import (
 func registerFunctions(cmds *repl.Handler, kern *Kernel) {
 	rt := kern.recTemp
 
-	//Tasks
-	cmds.Handle("find task", SearchTask(kern).WithArgs(nil, "Name"))
-
 	//Records
-	cmds.Handle("add", AddRecord(kern).WithArgs(rt, "Id", "Comment", "Hours"))
-	cmds.Handle("rec", StartRecord(kern).WithArgs(rt, "Id", "Comment"))
+	cmds.Handle("add", AddRecord(kern).WithArgs(rt, "Task Name", "Comment", "Hours"))
+	cmds.Handle("rec", StartRecord(kern).WithArgs(rt, "Task Name", "Comment"))
 	cmds.Handle("end", StopRecord(kern))
 	cmds.Handle("end at", StopRecordAt(kern).WithArgs(nil, "At"))
 	cmds.Handle("commit", CommitAll(kern))
 	cmds.Handle("send pool", SendToPool(kern))
 	cmds.Handle("drop", DropRecord(kern))
-	cmds.Handle("edit", EditRecord(kern).WithArgs(rt, "Id", "Comment"))
-	cmds.Handle("rec at", StartRecordAt(kern).WithArgs(rt, "Id", "Comment", "At"))
+	cmds.Handle("edit", EditRecord(kern).WithArgs(rt, "Task Name", "Comment"))
+	cmds.Handle("rec at", StartRecordAt(kern).WithArgs(rt, "Task Name", "Comment", "At"))
 	cmds.Handle("list", ListLocal(kern))
 	cmds.Handle("view", ViewRecord(kern))
 	cmds.Handle("edit stored", EditStoredRecord(kern))
@@ -33,17 +30,10 @@ func registerFunctions(cmds *repl.Handler, kern *Kernel) {
 	cmds.Handle("temp add", CreateTemplate(kern))
 	cmds.Handle("temp list", ListTemplates(kern))
 
-	//Login
-	cmds.Handle("login", Loggin(kern))
-	cmds.Handle("set token", SetToken(kern).WithArgs(nil, "Token"))
-
 	addHelp(cmds)
 }
 
 func addHelp(cmds *repl.Handler) {
-	//Tasks
-	cmds.Help("find task", "Search a task, by its name, on tasks master got from the Time Tracker.")
-
 	//Records
 	cmds.Help("add", "Adds a new task record.")
 	cmds.Help("rec", "Starts a new time recorer.")
@@ -66,8 +56,4 @@ func addHelp(cmds *repl.Handler) {
 	//Templates
 	cmds.Help("temp add", "Adds a new record template.")
 	cmds.Help("temp list", "List all the existing templates.")
-
-	//Login
-	cmds.Help("login", "Logins to Google")
-	cmds.Help("set token", "Set a new Google token")
 }

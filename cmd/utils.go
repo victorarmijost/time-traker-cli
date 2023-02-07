@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"time"
-	"varmijo/time-tracker/bairestt"
 )
 
 func parseHour(shour string) (*time.Time, error) {
@@ -18,37 +16,6 @@ func parseHour(shour string) (*time.Time, error) {
 		hour.Hour(), hour.Minute(), 0, 0, date.Location())
 
 	return &newDate, nil
-}
-
-func validateDescriptionId(tasks []bairestt.TaskInfo, sid string) (int64, error) {
-	id, err := strconv.ParseInt(sid, 10, 64)
-
-	if err != nil {
-		return 0, err
-	}
-
-	for _, t := range tasks {
-		if t.Id == id {
-			break
-		}
-	}
-
-	if id == 0 {
-		return 0, fmt.Errorf("not found")
-	}
-
-	return id, nil
-}
-
-func getTaskDetails(tasks []bairestt.TaskInfo, id int64) (*bairestt.TaskInfo, error) {
-	for _, t := range tasks {
-		if t.Id == id {
-			return &t, nil
-		}
-	}
-
-	return nil, fmt.Errorf("not found")
-
 }
 
 func getDateFromText(sdate string) (*time.Time, error) {

@@ -6,46 +6,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"varmijo/time-tracker/bairestt"
 	"varmijo/time-tracker/localStore"
 	"varmijo/time-tracker/repl"
 )
 
-//Search for a tasks
-func SearchTask(kern *Kernel) repl.ActionFuncExt {
-	return func(ctx context.Context, args map[string]string) (string, error) {
-		tasks, err := kern.tt.GetTasks(ctx)
-
-		if err != nil {
-			return "", err
-		}
-
-		list := []string{}
-		for _, t := range tasks {
-			if strings.Contains(strings.ToLower(t.Name), strings.ToLower(args["Name"])) {
-				list = append(list, fmt.Sprintf("[ %d ] %s : %s", t.Id, t.Name, t.Category))
-			}
-		}
-
-		return repl.SprintList(list), nil
-	}
-}
-
 //Add a new record
 func AddRecord(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
-		tasks, err := kern.tt.GetTasks(ctx)
-
-		if err != nil {
-			return "", err
-		}
-
-		descId, err := validateDescriptionId(tasks, args["Id"])
-
-		if err != nil {
-			return "", err
-		}
-
 		phours, err := strconv.ParseFloat(args["Hours"], 32)
 
 		if err != nil {
@@ -67,15 +34,10 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 
 		//Pending - Hardcoded record type 1
 		record := &localStore.Record{
-			TimeRecord: bairestt.TimeRecord{
-				ProjectId:     kern.config.ProjectId,
-				RecordTypeId:  1,
-				FocalPointId:  kern.config.FocalPointId,
-				Date:          recDate,
-				DescriptionId: descId,
-				Comments:      args["Comment"],
-				Hours:         float32(hours),
-			},
+			TaskName: args["Task Name"],
+			Date:     recDate,
+			Comments: args["Comment"],
+			Hours:    float32(hours),
 		}
 
 		err = localStore.Save(record)
@@ -96,26 +58,14 @@ func StartRecord(kern *Kernel) repl.ActionFuncExt {
 			return "", fmt.Errorf("wrong date, change back to today")
 		}
 
-		tasks, err := kern.tt.GetTasks(ctx)
-
-		if err != nil {
-			return "", err
-		}
-
 		state := kern.state
 		defer state.Save()
-
-		descId, err := validateDescriptionId(tasks, args["Id"])
-
-		if err != nil {
-			return "", err
-		}
 
 		if len(args["Comment"]) < 10 {
 			return "", fmt.Errorf("comment must have more than 10 characters")
 		}
 
-		err = state.StartRecord(descId, args["Comment"], nil)
+		err := state.StartRecord(args["Task Name"], args["Comment"], nil)
 
 		if err != nil {
 			return "", err
@@ -136,9 +86,9 @@ func StopRecord(kern *Kernel) repl.ActionFunc {
 		state := kern.state
 		defer state.Save()
 
-		descId := currentTask.Id
 		comment := currentTask.Comment
 		recDate := currentTask.StartTime
+		taskName := currentTask.TaskName
 
 		hours, err := state.EndRecord(nil)
 
@@ -148,15 +98,10 @@ func StopRecord(kern *Kernel) repl.ActionFunc {
 
 		//Pending - Hardcoded record type 1
 		record := &localStore.Record{
-			TimeRecord: bairestt.TimeRecord{
-				ProjectId:     kern.config.ProjectId,
-				RecordTypeId:  1,
-				FocalPointId:  kern.config.FocalPointId,
-				Date:          recDate,
-				DescriptionId: descId,
-				Comments:      comment,
-				Hours:         float32(hours),
-			},
+			Date:     recDate,
+			TaskName: taskName,
+			Comments: comment,
+			Hours:    float32(hours),
 		}
 
 		err = localStore.Save(record)
@@ -182,7 +127,6 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 			return "", err
 		}
 
-		descId := currentTask.Id
 		comment := currentTask.Comment
 		recDate := currentTask.StartTime
 
@@ -199,15 +143,9 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 		}
 
 		record := &localStore.Record{
-			TimeRecord: bairestt.TimeRecord{
-				ProjectId:     kern.config.ProjectId,
-				RecordTypeId:  1, //Pending - Hardcoded record type 1
-				FocalPointId:  kern.config.FocalPointId,
-				Date:          recDate,
-				DescriptionId: descId,
-				Comments:      comment,
-				Hours:         float32(hours),
-			},
+			Date:     recDate,
+			Comments: comment,
+			Hours:    float32(hours),
 		}
 
 		err = localStore.Save(record)
@@ -224,7 +162,6 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 
 func CommitAll(kern *Kernel) repl.ActionFunc {
 	return func(ctx context.Context) (string, error) {
-		tt := kern.tt
 		state := kern.state
 
 		files, err := localStore.ListByStatus(state.Date, localStore.StatusPending)
@@ -270,13 +207,8 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 			}
 
 			//If the record is 0 size, is marked as commited, but is not sent
-			if record.TimeRecord.Hours > 0 {
-				_, err = tt.AddRecord(ctx, &record.TimeRecord)
-
-				if err != nil {
-					err := fmt.Errorf("error commiting new record, %w", err)
-					return "", err
-				}
+			if record.Hours <= 0 {
+				continue
 			}
 
 			err = localStore.SetCommit(state.Date, f)
@@ -399,20 +331,8 @@ func DropRecord(kern *Kernel) repl.ActionFunc {
 
 func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
-		tasks, err := kern.tt.GetTasks(ctx)
-
-		if err != nil {
-			return "", err
-		}
-
 		state := kern.state
 		defer state.Save()
-
-		descId, err := validateDescriptionId(tasks, args["Id"])
-
-		if err != nil {
-			return "", err
-		}
 
 		recDate, err := parseHour(args["At"])
 
@@ -424,7 +344,7 @@ func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
 			return "", fmt.Errorf("comment must have more than 10 characters")
 		}
 
-		err = state.StartRecord(descId, args["Comment"], recDate)
+		err = state.StartRecord(args["Task Name"], args["Comment"], recDate)
 
 		if err != nil {
 			return "", err
@@ -436,20 +356,8 @@ func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
 
 func EditRecord(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
-		tasks, err := kern.tt.GetTasks(ctx)
-
-		if err != nil {
-			return "", err
-		}
-
 		state := kern.state
 		defer state.Save()
-
-		descId, err := validateDescriptionId(tasks, args["Id"])
-
-		if err != nil {
-			return "", err
-		}
 
 		currentTask, err := state.GetCurrentTask()
 
@@ -469,7 +377,7 @@ func EditRecord(kern *Kernel) repl.ActionFuncExt {
 			return "", fmt.Errorf("comment must have more than 10 characters")
 		}
 
-		err = state.StartRecord(descId, args["Comment"], &date)
+		err = state.StartRecord(args["Task Name"], args["Comment"], &date)
 
 		if err != nil {
 			return "", err
@@ -481,79 +389,41 @@ func EditRecord(kern *Kernel) repl.ActionFuncExt {
 
 func ViewRecord(kern *Kernel) repl.ActionFunc {
 	return func(ctx context.Context) (string, error) {
-		tasks, err := kern.tt.GetTasks(ctx)
-
-		if err != nil {
-			return "", err
-		}
-
 		currentTask, err := kern.state.GetCurrentTask()
 
 		if err != nil {
 			return "", err
 		}
 
-		taskDetails, err := getTaskDetails(tasks, currentTask.Id)
-
-		if err != nil {
-			return "", err
-		}
-
 		res := map[string]string{
-			"Category": taskDetails.Category,
-			"Task":     taskDetails.Name,
-			"Comment":  currentTask.Comment,
+			"Comment": currentTask.Comment,
 		}
 
 		return repl.SprintMap(res), nil
 	}
 }
 
-type TaskSearch []bairestt.TaskInfo
-
-func (t TaskSearch) GetElement(i int) string {
-	return fmt.Sprintf("%s : %s", t[i].Name, t[i].Category)
-}
-
-func (t TaskSearch) Match(i int, name string) bool {
-	return strings.Contains(strings.ToLower(t[i].Name), strings.ToLower(name))
-}
-
-func (t TaskSearch) Size() int {
-	return len(t)
-}
-
 func CreateTemplate(kern *Kernel) repl.InteractiveFunc {
 	return func(ctx context.Context, r *repl.Handler) {
-		cxtTask, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-
-		tasks, err := kern.tt.GetTasks(cxtTask)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		id := r.SearchFromList("Search task", TaskSearch(tasks))
-
-		if id < 0 {
-			return
-		}
-
-		taskInfo := tasks[id]
 
 		tempName := r.GetInput("Template name")
 
-		_, err = kern.recTemp.Get(tempName)
+		_, err := kern.recTemp.Get(tempName)
 
 		if err == nil {
 			r.PrintErrorMsg("Template already exist")
 			return
 		}
 
-		temp := repl.Template{
-			"Id": strconv.FormatInt(taskInfo.Id, 10),
+		temp := repl.Template{}
+
+		taskName := r.GetInput("Task Name")
+
+		if taskName != "" {
+			temp["Task Name"] = taskName
+		} else {
+			r.PrintErrorMsg("Missing task name")
+			return
 		}
 
 		if comment := r.GetInput("Comment (enter to skip)"); comment != "" {
@@ -567,9 +437,6 @@ func CreateTemplate(kern *Kernel) repl.InteractiveFunc {
 		if description := r.GetInput("Description (enter to skip)"); description != "" {
 			temp["x-description"] = description
 		}
-
-		temp["x-category"] = taskInfo.Category
-		temp["x-name"] = taskInfo.Name
 
 		err = kern.recTemp.Save(tempName, temp)
 		if err != nil {
@@ -586,94 +453,6 @@ func ListTemplates(kern *Kernel) repl.ActionFunc {
 		tmps := kern.recTemp.List()
 
 		return repl.SprintList(tmps), nil
-	}
-}
-
-type FocalPointSearch []bairestt.FocalPointInfo
-
-func (t FocalPointSearch) GetElement(i int) string {
-	return t[i].Name
-}
-
-func (t FocalPointSearch) Size() int {
-	return len(t)
-}
-
-func SetFocalPoint(kern *Kernel) repl.InteractiveFunc {
-	return func(ctx context.Context, r *repl.Handler) {
-		ctxFocal, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-
-		fp, err := kern.tt.GetFocalPoints(ctxFocal)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		r.PrintTitle("Configure your focal point")
-
-		id := r.SelectFromList(FocalPointSearch(fp))
-
-		if id < 0 {
-			return
-		}
-
-		fpInfo := fp[id]
-
-		kern.config.FocalPointId = fpInfo.Id
-
-		err = kern.config.Save()
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		r.PrintInfoMessage("Focal point added!")
-	}
-}
-
-type ProjectSearch []bairestt.ProjectInfo
-
-func (t ProjectSearch) GetElement(i int) string {
-	return t[i].Name
-}
-
-func (t ProjectSearch) Size() int {
-	return len(t)
-}
-
-func SetProject(kern *Kernel) repl.InteractiveFunc {
-	return func(ctx context.Context, r *repl.Handler) {
-		ctxProj, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-
-		proj, err := kern.tt.GetProjects(ctxProj)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		r.PrintTitle("Configure your project")
-
-		id := r.SelectFromList(ProjectSearch(proj))
-
-		if id < 0 {
-			return
-		}
-
-		projInfo := proj[id]
-
-		kern.config.ProjectId = projInfo.Id
-
-		err = kern.config.Save()
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		r.PrintInfoMessage("Project added!")
 	}
 }
 
@@ -729,29 +508,11 @@ func EditStoredRecord(kern *Kernel) repl.InteractiveFunc {
 
 		record := records[id]
 
-		cxtTask, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		tasks, err := kern.tt.GetTasks(cxtTask)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		task, err := getTaskDetails(tasks, record.DescriptionId)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
 		r.PrintHighightedMessage("Current data")
 
 		r.PrintMap(map[string]string{
-			"Task name":     task.Name,
-			"Task category": task.Category,
-			"Duration":      fmt.Sprintf("%.2f", record.Hours),
-			"Comment":       record.Comments,
+			"Duration": fmt.Sprintf("%.2f", record.Hours),
+			"Comment":  record.Comments,
 		})
 
 		cont := r.GetInput("Select an option (e: edit, q: cancel)")
@@ -768,7 +529,7 @@ func EditStoredRecord(kern *Kernel) repl.InteractiveFunc {
 
 		r.PrintHighightedMessage("Editing data")
 
-		AddRecord(kern).WithArgs(kern.recTemp, "Id", "Comment", "Hours").Run(r)
+		AddRecord(kern).WithArgs(kern.recTemp, "Task Name", "Comment", "Hours").Run(r)
 
 		err = localStore.DeleteRecord(kern.state.Date, record.Id)
 
@@ -796,29 +557,11 @@ func DeleteStoredRecord(kern *Kernel) repl.InteractiveFunc {
 
 		record := records[id]
 
-		cxtTask, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		tasks, err := kern.tt.GetTasks(cxtTask)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
-		task, err := getTaskDetails(tasks, record.DescriptionId)
-
-		if err != nil {
-			r.PrintError(err)
-			return
-		}
-
 		r.PrintHighightedMessage("Data that will be deleted")
 
 		r.PrintMap(map[string]string{
-			"Task name":     task.Name,
-			"Task category": task.Category,
-			"Duration":      fmt.Sprintf("%.2f", record.Hours),
-			"Comment":       record.Comments,
+			"Duration": fmt.Sprintf("%.2f", record.Hours),
+			"Comment":  record.Comments,
 		})
 
 		cont := r.GetInput("Select an option (d: delete, q: cancel)")
@@ -852,25 +595,5 @@ func PourePool(kern *Kernel) repl.ActionFunc {
 		}
 
 		return "Pool poured!", nil
-	}
-}
-
-func Loggin(kern *Kernel) repl.InteractiveFunc {
-	return func(ctx context.Context, r *repl.Handler) {
-		loginWithPass(kern.config.Password, kern.tt, r)
-	}
-}
-
-func SetToken(kern *Kernel) repl.ActionFuncExt {
-	return func(ctx context.Context, args map[string]string) (string, error) {
-		if args["Token"] == "" {
-			return "", fmt.Errorf("empty token")
-		}
-
-		err := kern.tt.SetToken(args["Token"])
-		if err != nil {
-			return "", err
-		}
-		return "token set", nil
 	}
 }

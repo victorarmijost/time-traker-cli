@@ -1,6 +1,6 @@
 package localStore
 
-import "varmijo/time-tracker/bairestt"
+import "time"
 
 const (
 	StatusStored   = "stored"   //Records either pending to commint or commited
@@ -11,6 +11,9 @@ const (
 )
 
 type Record struct {
-	Id string `json:"id"`
-	bairestt.TimeRecord
+	Id       string    `json:"id"`
+	TaskName string    `json:"taskName"`
+	Date     time.Time `json:"date"`
+	Hours    float32   `json:"hours"`
+	Comments string    `json:"comments"`
 }

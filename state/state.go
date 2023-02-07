@@ -17,7 +17,7 @@ type State struct {
 }
 
 type Task struct {
-	Id        int64     `json:"id"`
+	TaskName  string    `json:"taskName"`
 	Comment   string    `json:"comment"`
 	StartTime time.Time `json:"startTime"`
 }
@@ -71,7 +71,7 @@ func (s *State) Save() error {
 
 }
 
-func (s *State) StartRecord(id int64, comment string, stime *time.Time) error {
+func (s *State) StartRecord(taskName string, comment string, stime *time.Time) error {
 	if s.IsWorking() {
 		return fmt.Errorf("already working on a task")
 	}
@@ -84,8 +84,8 @@ func (s *State) StartRecord(id int64, comment string, stime *time.Time) error {
 		s.CurrentTask.StartTime = time.Now()
 	}
 
-	s.CurrentTask.Id = id
 	s.CurrentTask.Comment = comment
+	s.CurrentTask.TaskName = taskName
 
 	return nil
 

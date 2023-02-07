@@ -4,12 +4,9 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"math"
 	"os"
-	"time"
-	"varmijo/time-tracker/bairestt"
 	"varmijo/time-tracker/config"
 	"varmijo/time-tracker/repl"
 	"varmijo/time-tracker/state"
@@ -21,7 +18,6 @@ import (
 const logFile = "tt.log"
 
 type Kernel struct {
-	tt      *bairestt.Bairestt
 	state   *state.State
 	config  *config.Config
 	recTemp *repl.TemplateHandler
@@ -46,8 +42,6 @@ func main() {
 	file := setLogger(config.LogLevel)
 	defer file.Close()
 
-	tt := initTimeTracker(config, cmds, login)
-
 	recTemp := repl.NewTemplateHandler("rec")
 	err := recTemp.Load()
 
@@ -57,7 +51,6 @@ func main() {
 
 	kern := &Kernel{
 		state:   state,
-		tt:      tt,
 		config:  config,
 		recTemp: recTemp,
 	}
@@ -69,64 +62,6 @@ func main() {
 	registerFunctions(cmds, kern)
 
 	cmds.Repl()
-}
-
-//Runs the application initTimeTracker
-func initTimeTracker(config *config.Config, cmds *repl.Handler, login bool) *bairestt.Bairestt {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if config.Email == "" {
-		log.Fatal("Missing email configuration")
-	}
-
-	tt := bairestt.NewService(config.Email)
-
-	err := tt.Start(ctx)
-
-	if !login || err == nil {
-		return tt
-	}
-
-	pass := config.Password
-	if pass == "" {
-		pass = cmds.GetPass("Google password")
-	}
-
-	tt = loginWithPass(pass, tt, cmds)
-
-	return tt
-}
-
-func loginWithPass(pass string, tt *bairestt.Bairestt, cmds *repl.Handler) *bairestt.Bairestt {
-	cmds.PrintInfoMessage("Performing Google login, it will take a while please wait...")
-
-	logged := false
-	for count := 0; count < 3; count++ {
-		cmds.PrintInfoMessage("Peforming logging attempt")
-
-		ctx, cancelPass := context.WithTimeout(context.Background(), 30*time.Second)
-
-		err := tt.StartWithPass(ctx, pass)
-
-		cancelPass()
-
-		if err != nil {
-			cmds.PrintError(err)
-		} else {
-			logged = true
-			break
-		}
-	}
-
-	if !logged {
-		cmds.PrintError(fmt.Errorf("can't log in"))
-		return tt
-	}
-
-	cmds.PrintInfoMessage("Log in successfull!!")
-
-	return tt
 }
 
 //Creates the Cmds object, which is in charge of the CLI.
@@ -165,17 +100,7 @@ func initConfig(r *repl.Handler) *config.Config {
 	err := c.Load()
 
 	if err != nil {
-		email := r.GetInput("Email address")
-
-		if email == "" {
-			log.Fatal("missing email configuration, application can't start")
-		}
-		c.Email = email
-		err = c.Save()
-
-		if err != nil {
-			log.Fatal("config file can't be saved, application can't start")
-		}
+		log.Fatal("config file can't be loaded, application can't start")
 	}
 
 	return c
@@ -193,8 +118,6 @@ func saveState(state *state.State) {
 func runConfig(r *repl.Handler, kern *Kernel) {
 	ctx := context.Background()
 
-	SetFocalPoint(kern)(ctx, r)
-	SetProject(kern)(ctx, r)
 	SetWorkingTime(kern)(ctx, r)
 }
 
