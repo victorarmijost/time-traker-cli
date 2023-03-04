@@ -35,7 +35,7 @@ func main() {
 	cmds, closeTerm := initCmds(state)
 	defer closeTerm()
 
-	cmds.PrintTitle("Welcome to BairedDev Time Tracker CLI tool")
+	cmds.PrintTitle("Welcome to Time Tracker CLI tool")
 
 	config := initConfig(cmds)
 
@@ -64,19 +64,19 @@ func main() {
 	cmds.Repl()
 }
 
-//Creates the Cmds object, which is in charge of the CLI.
+// Creates the Cmds object, which is in charge of the CLI.
 func initCmds(state *state.State) (*repl.Handler, repl.CloseTerm) {
 	cmds, close := repl.NewHandler(getPrompt(state), "exit")
 
 	return cmds, close
 }
 
-//Defines how the tasks time is rounded
+// Defines how the tasks time is rounded
 func timeRounding(time float32) float32 {
 	return float32(math.Round(float64(time)/0.25) * 0.25)
 }
 
-//The state store the information of the current worked task
+// The state store the information of the current worked task
 func initState() *state.State {
 	state := state.NewState(timeRounding)
 
@@ -93,7 +93,7 @@ func initState() *state.State {
 	return state
 }
 
-//The configuration stores all the application configurable values
+// The configuration stores all the application configurable values
 func initConfig(r *repl.Handler) *config.Config {
 	c := config.NewConfig()
 
@@ -106,7 +106,7 @@ func initConfig(r *repl.Handler) *config.Config {
 	return c
 }
 
-//Save the state before exit
+// Save the state before exit
 func saveState(state *state.State) {
 	err := state.Save()
 	if err != nil {
@@ -114,14 +114,14 @@ func saveState(state *state.State) {
 	}
 }
 
-//Runs all the application initial configurations
+// Runs all the application initial configurations
 func runConfig(r *repl.Handler, kern *Kernel) {
 	ctx := context.Background()
 
 	SetWorkingTime(kern)(ctx, r)
 }
 
-//Set up the application logger
+// Set up the application logger
 func setLogger(slevel string) *os.File {
 	file, err := os.OpenFile(utils.GeAppPath(logFile), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
