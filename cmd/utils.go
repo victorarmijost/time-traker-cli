@@ -5,8 +5,12 @@ import (
 	"time"
 )
 
-func parseHour(shour string) (*time.Time, error) {
+func parseHour(shour string, pdate *time.Time) (*time.Time, error) {
 	date := time.Now()
+	if pdate != nil {
+		date = *pdate
+	}
+
 	hour, err := time.Parse("15:04", shour)
 	if err != nil {
 		return nil, err

@@ -130,7 +130,7 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 		comment := currentTask.Comment
 		recDate := currentTask.StartTime
 
-		endTime, err := parseHour(args["At"])
+		endTime, err := parseHour(args["At"], state.Date)
 
 		if err != nil {
 			return "", err
@@ -160,9 +160,26 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 	}
 }
 
-func CommitAll(kern *Kernel) repl.ActionFunc {
-	return func(ctx context.Context) (string, error) {
+func CommitAll(kern *Kernel) repl.ActionFuncExt {
+	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
+
+		var amount float32
+		s_amount, ok := args["Amount"]
+		if !ok || s_amount == "" {
+			amount = kern.config.WorkingTime
+		} else {
+			amount64, err := strconv.ParseFloat(s_amount, 32)
+			if err != nil {
+				return "", err
+			}
+
+			if amount64 < 1 {
+				return "", fmt.Errorf("amount must be greater than 1")
+			}
+
+			amount = float32(amount64)
+		}
 
 		files, err := localStore.ListByStatus(state.Date, localStore.StatusPending)
 
@@ -171,7 +188,7 @@ func CommitAll(kern *Kernel) repl.ActionFunc {
 		}
 
 		commitedTime := localStore.GetTimeByStatus(state.Date, localStore.StatusCommited)
-		remTime := kern.config.WorkingTime - commitedTime
+		remTime := amount - commitedTime
 		for _, f := range files {
 			record, err := localStore.Get(state.Date, f)
 			if err != nil {
@@ -334,7 +351,7 @@ func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
 		state := kern.state
 		defer state.Save()
 
-		recDate, err := parseHour(args["At"])
+		recDate, err := parseHour(args["At"], state.Date)
 
 		if err != nil {
 			return "", err

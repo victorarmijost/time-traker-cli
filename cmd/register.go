@@ -12,7 +12,7 @@ func registerFunctions(cmds *repl.Handler, kern *Kernel) {
 	cmds.Handle("rec", StartRecord(kern).WithArgs(rt, "Task Name", "Comment"))
 	cmds.Handle("end", StopRecord(kern))
 	cmds.Handle("end at", StopRecordAt(kern).WithArgs(nil, "At"))
-	cmds.Handle("commit", CommitAll(kern))
+	cmds.Handle("commit", CommitAll(kern).WithArgs(nil, "Amount"))
 	cmds.Handle("send pool", SendToPool(kern))
 	cmds.Handle("drop", DropRecord(kern))
 	cmds.Handle("edit", EditRecord(kern).WithArgs(rt, "Task Name", "Comment"))
