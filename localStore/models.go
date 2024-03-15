@@ -14,6 +14,6 @@ type Record struct {
 	Id       string    `json:"id"`
 	TaskName string    `json:"taskName"`
 	Date     time.Time `json:"date"`
-	Hours    float32   `json:"hours"`
+	Hours    float64   `json:"hours"`
 	Comments string    `json:"comments"`
 }

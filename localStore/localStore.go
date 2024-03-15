@@ -233,14 +233,14 @@ func GetAllByStatus(date *time.Time, status string) ([]*Record, error) {
 	return list, nil
 }
 
-func GetTimeByStatus(date *time.Time, status string) float32 {
+func GetTimeByStatus(date *time.Time, status string) float64 {
 	records, err := GetAllByStatus(date, status)
 
 	if err != nil {
 		return 0
 	}
 
-	Worked := float32(0.0)
+	Worked := float64(0.0)
 	for _, r := range records {
 		Worked += r.Hours
 	}

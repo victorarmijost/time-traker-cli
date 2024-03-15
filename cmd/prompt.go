@@ -9,9 +9,19 @@ import (
 	"varmijo/time-tracker/state"
 )
 
-var wt, ct, pt, tt float32
+func formatDuration(d float64) string {
+	h := int(d)
+	d -= float64(h)
+	m := int(d * 60)
+
+	return fmt.Sprintf("%d:%02d", h, m)
+}
 
 func getPrompt(state *state.State) repl.Prompt {
+	var (
+		wt, ct, pt, tt float64
+	)
+
 	return func(pk repl.PromptType) string {
 		if pk == repl.FULL_UPDATE {
 			wt = localStore.GetTimeByStatus(state.Date, localStore.StatusPending)
@@ -23,23 +33,38 @@ func getPrompt(state *state.State) repl.Prompt {
 		statusBar := ""
 
 		if wt > 0 {
-			statusBar = fmt.Sprintf("[Worked:%.2f]", wt)
+			statusBar = fmt.Sprintf("[Worked:%s]", formatDuration(wt))
 		}
 
 		if ct > 0 {
-			statusBar = fmt.Sprintf("%s[Commited:%.2f]", statusBar, ct)
+			statusBar = fmt.Sprintf("%s[Commited:%s]", statusBar, formatDuration(ct))
 		}
 
 		if pt > 0 {
-			statusBar = fmt.Sprintf("%s[Pool:%.2f]", statusBar, pt)
+			statusBar = fmt.Sprintf("%s[Pool:%s]", statusBar, formatDuration(pt))
 		}
 
 		if state.IsWorking() {
-			statusBar = fmt.Sprintf("%s[Tracking:%.2f][%s]", statusBar, tt, getClockEmoji())
+			statusBar = fmt.Sprintf("%s[Tracking:%s][%s]", statusBar, formatDuration(tt), getClockEmoji())
 		}
 
 		if state.Date != nil {
 			statusBar = fmt.Sprintf("%s[%s]", statusBar, state.Date.Format("06-01-02"))
+		}
+
+		if state.HasPomodoro() {
+			pomState := state.GetPomodoroState()
+			pomProg := state.GetStatusProgress()
+
+			statusBar = fmt.Sprintf("%s[%s:%d%%]", statusBar, pomState, pomProg)
+
+			if pomState == "b" {
+				statusBar = fmt.Sprintf("%s[%0.f]", statusBar, state.GetBreakTime())
+			}
+
+			if pomProg >= 100 {
+				statusBar = fmt.Sprintf("%s%s", statusBar, getAlertEmoji())
+			}
 		}
 
 		if statusBar != "" {
@@ -58,4 +83,12 @@ func getClockEmoji() string {
 	n := int64(len(clocks))
 
 	return strings.TrimSpace(clocks[time.Now().Unix()%n])
+}
+
+func getAlertEmoji() string {
+	alerts := []string{"{!}", "{ }"}
+
+	n := int64(len(alerts))
+
+	return alerts[time.Now().Unix()%n]
 }

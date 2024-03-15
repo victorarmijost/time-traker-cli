@@ -5,18 +5,23 @@ import (
 )
 
 func registerFunctions(cmds *repl.Handler, kern *Kernel) {
-	rt := kern.recTemp
+	recTemp := kern.recTemp
 
 	//Records
-	cmds.Handle("add", AddRecord(kern).WithArgs(rt, "Task Name", "Comment", "Hours"))
-	cmds.Handle("rec", StartRecord(kern).WithArgs(rt, "Task Name", "Comment"))
+	cmds.Handle("add", AddRecord(kern).WithArgs(nil, "Hours"))
+	cmds.Handle("rec", StartRecord(kern).WithArgs(nil))
+	cmds.Handle("rec at", StartRecordAt(kern).WithArgs(nil, "At"))
+
+	cmds.Handle("task add", TaskAddRecord(kern).WithArgs(recTemp, "Task Name", "Comment", "Hours"))
+	cmds.Handle("task rec", TaskStartRecord(kern).WithArgs(recTemp, "Task Name", "Comment"))
+	cmds.Handle("task rec at", TaskStartRecordAt(kern).WithArgs(recTemp, "Task Name", "Comment", "At"))
+
 	cmds.Handle("end", StopRecord(kern))
 	cmds.Handle("end at", StopRecordAt(kern).WithArgs(nil, "At"))
-	cmds.Handle("commit", CommitAll(kern))
+	cmds.Handle("commit", CommitAll(kern).WithArgs(nil, "Amount"))
 	cmds.Handle("send pool", SendToPool(kern))
 	cmds.Handle("drop", DropRecord(kern))
-	cmds.Handle("edit", EditRecord(kern).WithArgs(rt, "Task Name", "Comment"))
-	cmds.Handle("rec at", StartRecordAt(kern).WithArgs(rt, "Task Name", "Comment", "At"))
+	cmds.Handle("edit", EditRecord(kern).WithArgs(recTemp, "Task Name", "Comment"))
 	cmds.Handle("list", ListLocal(kern))
 	cmds.Handle("view", ViewRecord(kern))
 	cmds.Handle("edit stored", EditStoredRecord(kern))
