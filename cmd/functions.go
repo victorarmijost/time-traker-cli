@@ -10,8 +10,86 @@ import (
 	"varmijo/time-tracker/repl"
 )
 
-//Add a new record
+// Add a new record
 func AddRecord(kern *Kernel) repl.ActionFuncExt {
+	return func(ctx context.Context, args map[string]string) (string, error) {
+		phours, err := strconv.ParseFloat(args["Hours"], 32)
+
+		if err != nil {
+			return "", err
+		}
+
+		hours := kern.state.TaskTimeRounder(float32(phours))
+
+		var recDate time.Time
+		if kern.state.Date == nil {
+			recDate = time.Now()
+		} else {
+			recDate = *kern.state.Date
+		}
+
+		//Pending - Hardcoded record type 1
+		record := &localStore.Record{
+			TaskName: "Generic",
+			Date:     recDate,
+			Comments: "Generic task",
+			Hours:    float32(hours),
+		}
+
+		err = localStore.Save(record)
+
+		if err != nil {
+			err := fmt.Errorf("new record can't be inserted, %w", err)
+			return "", err
+		}
+
+		return fmt.Sprintf("%s - %0.2f hours inserted!", record.Comments, record.Hours), nil
+	}
+}
+
+// Add a new record
+func StartRecord(kern *Kernel) repl.ActionFuncExt {
+	return func(ctx context.Context, args map[string]string) (string, error) {
+		if kern.state.Date != nil {
+			return "", fmt.Errorf("wrong date, change back to today")
+		}
+
+		state := kern.state
+		defer state.Save()
+
+		err := state.StartRecord("Generic", "Generic task", nil)
+
+		if err != nil {
+			return "", err
+		}
+
+		return "Record started!", nil
+	}
+}
+
+func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
+	return func(ctx context.Context, args map[string]string) (string, error) {
+		state := kern.state
+		defer state.Save()
+
+		recDate, err := parseHour(args["At"], state.Date)
+
+		if err != nil {
+			return "", err
+		}
+
+		err = state.StartRecord("Generic", "Generic Task", recDate)
+
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("Record started at %s!", args["At"]), nil
+	}
+}
+
+// Add a new record
+func TaskAddRecord(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		phours, err := strconv.ParseFloat(args["Hours"], 32)
 
@@ -51,8 +129,8 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 	}
 }
 
-//Add a new record
-func StartRecord(kern *Kernel) repl.ActionFuncExt {
+// Add a new record
+func TaskStartRecord(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		if kern.state.Date != nil {
 			return "", fmt.Errorf("wrong date, change back to today")
@@ -346,7 +424,7 @@ func DropRecord(kern *Kernel) repl.ActionFunc {
 	}
 }
 
-func StartRecordAt(kern *Kernel) repl.ActionFuncExt {
+func TaskStartRecordAt(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
 		defer state.Save()
@@ -546,7 +624,7 @@ func EditStoredRecord(kern *Kernel) repl.InteractiveFunc {
 
 		r.PrintHighightedMessage("Editing data")
 
-		AddRecord(kern).WithArgs(kern.recTemp, "Task Name", "Comment", "Hours").Run(r)
+		TaskAddRecord(kern).WithArgs(kern.recTemp, "Task Name", "Comment", "Hours").Run(r)
 
 		err = localStore.DeleteRecord(kern.state.Date, record.Id)
 
