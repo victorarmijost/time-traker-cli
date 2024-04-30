@@ -37,7 +37,7 @@ func main() {
 
 	cmds.PrintTitle("Welcome to Time Tracker CLI tool")
 
-	config := initConfig(cmds)
+	config := initConfig()
 
 	file := setLogger(config.LogLevel)
 	defer file.Close()
@@ -72,8 +72,9 @@ func initCmds(state *state.State) (*repl.Handler, repl.CloseTerm) {
 }
 
 // Defines how the tasks time is rounded
-func timeRounding(time float32) float32 {
-	return float32(math.Round(float64(time)/0.25) * 0.25)
+func timeRounding(time float64) float64 {
+	fact := float64(1) / 60
+	return float64(math.Round(float64(time)/fact) * fact)
 }
 
 // The state store the information of the current worked task
@@ -94,7 +95,7 @@ func initState() *state.State {
 }
 
 // The configuration stores all the application configurable values
-func initConfig(r *repl.Handler) *config.Config {
+func initConfig() *config.Config {
 	c := config.NewConfig()
 
 	err := c.Load()

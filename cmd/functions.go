@@ -19,7 +19,7 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 			return "", err
 		}
 
-		hours := kern.state.TaskTimeRounder(float32(phours))
+		hours := kern.state.TaskTimeRounder(float64(phours))
 
 		var recDate time.Time
 		if kern.state.Date == nil {
@@ -33,7 +33,7 @@ func AddRecord(kern *Kernel) repl.ActionFuncExt {
 			TaskName: "Generic",
 			Date:     recDate,
 			Comments: "Generic task",
-			Hours:    float32(hours),
+			Hours:    float64(hours),
 		}
 
 		err = localStore.Save(record)
@@ -97,7 +97,7 @@ func TaskAddRecord(kern *Kernel) repl.ActionFuncExt {
 			return "", err
 		}
 
-		hours := kern.state.TaskTimeRounder(float32(phours))
+		hours := kern.state.TaskTimeRounder(float64(phours))
 
 		var recDate time.Time
 		if kern.state.Date == nil {
@@ -115,7 +115,7 @@ func TaskAddRecord(kern *Kernel) repl.ActionFuncExt {
 			TaskName: args["Task Name"],
 			Date:     recDate,
 			Comments: args["Comment"],
-			Hours:    float32(hours),
+			Hours:    float64(hours),
 		}
 
 		err = localStore.Save(record)
@@ -179,7 +179,7 @@ func StopRecord(kern *Kernel) repl.ActionFunc {
 			Date:     recDate,
 			TaskName: taskName,
 			Comments: comment,
-			Hours:    float32(hours),
+			Hours:    float64(hours),
 		}
 
 		err = localStore.Save(record)
@@ -223,7 +223,7 @@ func StopRecordAt(kern *Kernel) repl.ActionFuncExt {
 		record := &localStore.Record{
 			Date:     recDate,
 			Comments: comment,
-			Hours:    float32(hours),
+			Hours:    float64(hours),
 		}
 
 		err = localStore.Save(record)
@@ -242,21 +242,19 @@ func CommitAll(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
 		state := kern.state
 
-		var amount float32
+		var amount float64
 		s_amount, ok := args["Amount"]
 		if !ok || s_amount == "" {
 			amount = kern.config.WorkingTime
 		} else {
-			amount64, err := strconv.ParseFloat(s_amount, 32)
+			amount, err := strconv.ParseFloat(s_amount, 32)
 			if err != nil {
 				return "", err
 			}
 
-			if amount64 < 1 {
+			if amount < 1 {
 				return "", fmt.Errorf("amount must be greater than 1")
 			}
-
-			amount = float32(amount64)
 		}
 
 		files, err := localStore.ListByStatus(state.Date, localStore.StatusPending)
@@ -564,7 +562,7 @@ func SetWorkingTime(kern *Kernel) repl.InteractiveFunc {
 			return
 		}
 
-		kern.config.WorkingTime = float32(wt)
+		kern.config.WorkingTime = float64(wt)
 
 		err = kern.config.Save()
 		if err != nil {

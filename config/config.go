@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	LogLevel    string  `json:"log_level"`
-	WorkingTime float32 `json:"workingTime"`
+	WorkingTime float64 `json:"workingTime"`
 }
 
 const ConfigFileName = "config.json"

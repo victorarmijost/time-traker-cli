@@ -8,7 +8,7 @@ import (
 	"varmijo/time-tracker/utils"
 )
 
-type TimeRounder func(float32) float32
+type TimeRounder func(float64) float64
 
 type State struct {
 	Date            *time.Time  `json:"date"`
@@ -91,7 +91,7 @@ func (s *State) StartRecord(taskName string, comment string, stime *time.Time) e
 
 }
 
-func (s *State) EndRecord(et *time.Time) (float32, error) {
+func (s *State) EndRecord(et *time.Time) (float64, error) {
 	if !s.IsWorking() {
 		return 0, fmt.Errorf("not working")
 	}
@@ -107,13 +107,13 @@ func (s *State) EndRecord(et *time.Time) (float32, error) {
 	return time, nil
 }
 
-func (s *State) GetTaskTime(et *time.Time) float32 {
+func (s *State) GetTaskTime(et *time.Time) float64 {
 	if s.IsWorking() {
 		if et == nil {
-			return s.TaskTimeRounder(float32(time.Since(s.CurrentTask.StartTime).Hours()))
+			return s.TaskTimeRounder(float64(time.Since(s.CurrentTask.StartTime).Hours()))
 		}
 
-		return s.TaskTimeRounder(float32(et.Sub(s.CurrentTask.StartTime).Hours()))
+		return s.TaskTimeRounder(float64(et.Sub(s.CurrentTask.StartTime).Hours()))
 	}
 
 	return 0
