@@ -52,6 +52,21 @@ func getPrompt(state *state.State) repl.Prompt {
 			statusBar = fmt.Sprintf("%s[%s]", statusBar, state.Date.Format("06-01-02"))
 		}
 
+		if state.HasPomodoro() {
+			pomState := state.GetPomodoroState()
+			pomProg := state.GetStatusProgress()
+
+			statusBar = fmt.Sprintf("%s[%s:%d%%]", statusBar, pomState, pomProg)
+
+			if pomState == "b" {
+				statusBar = fmt.Sprintf("%s[%0.f]", statusBar, state.GetBreakTime())
+			}
+
+			if pomProg >= 100 {
+				statusBar = fmt.Sprintf("%s%s", statusBar, getAlertEmoji())
+			}
+		}
+
 		if statusBar != "" {
 			return fmt.Sprintf("%s tt", statusBar)
 		}
@@ -68,4 +83,12 @@ func getClockEmoji() string {
 	n := int64(len(clocks))
 
 	return strings.TrimSpace(clocks[time.Now().Unix()%n])
+}
+
+func getAlertEmoji() string {
+	alerts := []string{"{!}", "{ }"}
+
+	n := int64(len(alerts))
+
+	return alerts[time.Now().Unix()%n]
 }

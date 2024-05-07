@@ -8,12 +8,27 @@ import (
 	"varmijo/time-tracker/utils"
 )
 
+const (
+	PomodoroWorkTime      = 25
+	PomodoroBreakTime     = 5
+	PomodoroLongBreakTime = 15
+)
+
 type TimeRounder func(float64) float64
 
 type State struct {
 	Date            *time.Time  `json:"date"`
 	CurrentTask     *Task       `json:"currentTask"`
+	Pomodoro        *Pomodoro   `json:"pomodoro"`
 	TaskTimeRounder TimeRounder `json:"-"`
+}
+
+type Pomodoro struct {
+	State       string    `json:"state"`
+	AccWorkTime float64   `json:"accWorkTime"`
+	AccRestTime float64   `json:"accRestTime"`
+	Count       float64   `json:"count"`
+	StartTime   time.Time `json:"startTime"`
 }
 
 type Task struct {
@@ -71,21 +86,25 @@ func (s *State) Save() error {
 
 }
 
-func (s *State) StartRecord(taskName string, comment string, stime *time.Time) error {
+func (s *State) StartRecord(taskName string, comment string, st *time.Time) error {
 	if s.IsWorking() {
 		return fmt.Errorf("already working on a task")
 	}
 
 	s.CurrentTask = &Task{}
 
-	if stime != nil {
-		s.CurrentTask.StartTime = *stime
+	var stime time.Time
+	if st != nil {
+		stime = *st
 	} else {
-		s.CurrentTask.StartTime = time.Now()
+		stime = time.Now()
 	}
 
+	s.CurrentTask.StartTime = stime
 	s.CurrentTask.Comment = comment
 	s.CurrentTask.TaskName = taskName
+
+	s.StartPomodoro(stime)
 
 	return nil
 
@@ -96,15 +115,24 @@ func (s *State) EndRecord(et *time.Time) (float64, error) {
 		return 0, fmt.Errorf("not working")
 	}
 
-	time := s.GetTaskTime(et)
+	duration := s.GetTaskTime(et)
 
-	if time < 0 {
+	if duration < 0 {
 		return 0, fmt.Errorf("wrong end time")
 	}
 
 	s.CurrentTask = nil
 
-	return time, nil
+	var etime time.Time
+	if et != nil {
+		etime = *et
+	} else {
+		etime = time.Now()
+	}
+
+	s.EndPomodoro(etime)
+
+	return duration, nil
 }
 
 func (s *State) GetTaskTime(et *time.Time) float64 {
@@ -129,4 +157,117 @@ func (s *State) GetCurrentTask() (*Task, error) {
 	}
 
 	return s.CurrentTask, nil
+}
+
+func (s *State) HasPomodoro() bool {
+	return s.Pomodoro != nil
+}
+
+func (s *State) GetPomodoroState() string {
+	if s.HasPomodoro() {
+		return s.Pomodoro.State
+	}
+
+	return ""
+}
+
+func (s *State) StartPomodoro(stime time.Time) {
+	if s.HasPomodoro() {
+		if s.Pomodoro.State == "w" {
+			return
+		}
+
+		if s.Pomodoro.State == "b" {
+			if s.GetTimer() > s.Pomodoro.AccRestTime {
+				s.Pomodoro.AccRestTime = 0
+			} else {
+				s.Pomodoro.AccRestTime -= s.GetTimer()
+			}
+		}
+
+		s.Pomodoro.State = "w"
+		s.Pomodoro.StartTime = stime
+
+		return
+	}
+
+	s.Pomodoro = &Pomodoro{
+		State:       "w",
+		AccWorkTime: 0,
+		AccRestTime: 0,
+		StartTime:   stime,
+	}
+}
+
+func (s *State) GetTimer() float64 {
+	if !s.HasPomodoro() {
+		return 0
+	}
+
+	return time.Since(s.Pomodoro.StartTime).Minutes()
+}
+
+func (s *State) GetTimerWithAccum() float64 {
+	return s.Pomodoro.AccWorkTime + s.GetTimer()
+}
+
+func (s *State) EndPomodoro(etime time.Time) {
+	if !s.HasPomodoro() {
+		return
+	}
+
+	if s.Pomodoro.State != "w" {
+		return
+	}
+
+	at := s.GetTimerWithAccum()
+
+	if at < PomodoroWorkTime {
+		s.Pomodoro.State = "s"
+		s.Pomodoro.AccWorkTime += s.GetTimer()
+		return
+	}
+
+	wp := at / PomodoroWorkTime
+
+	s.Pomodoro.Count += wp
+	s.Pomodoro.AccWorkTime = 0
+	s.Pomodoro.AccRestTime = wp * PomodoroBreakTime
+
+	for s.Pomodoro.Count >= 4 {
+		s.Pomodoro.AccRestTime += PomodoroLongBreakTime - PomodoroBreakTime
+		s.Pomodoro.Count -= 4
+	}
+
+	s.Pomodoro.StartTime = etime
+	s.Pomodoro.State = "b"
+}
+
+func (s *State) GetStatusProgress() int {
+	switch s.Pomodoro.State {
+	case "w":
+		return int(s.GetTimerWithAccum() / PomodoroWorkTime * 100)
+	case "b":
+		t := s.GetTimer()
+		if t < s.Pomodoro.AccRestTime {
+			return int(t / s.Pomodoro.AccRestTime * 100)
+		}
+		return 100
+	case "s":
+		return int(s.Pomodoro.AccWorkTime / PomodoroWorkTime * 100)
+	}
+
+	return 0
+}
+
+func (s *State) GetBreakTime() float64 {
+	if s.HasPomodoro() {
+		return s.Pomodoro.AccRestTime
+	}
+
+	return 0
+}
+
+func (s *State) ClearPomodoro() {
+	s.Pomodoro = nil
 }

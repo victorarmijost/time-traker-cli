@@ -13,8 +13,7 @@ import (
 // Add a new record
 func AddRecord(kern *Kernel) repl.ActionFuncExt {
 	return func(ctx context.Context, args map[string]string) (string, error) {
-		phours, err := strconv.ParseFloat(args["Hours"], 32)
-
+		phours, err := parseDuration(args["Hours"])
 		if err != nil {
 			return "", err
 		}
@@ -311,6 +310,8 @@ func CommitAll(kern *Kernel) repl.ActionFuncExt {
 
 			remTime -= record.Hours
 		}
+
+		state.ClearPomodoro()
 
 		return "Records commited!", nil
 	}
