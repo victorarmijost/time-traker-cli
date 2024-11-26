@@ -25,7 +25,6 @@ type State struct {
 
 type Pomodoro struct {
 	State       string    `json:"state"`
-	AccWorkTime float64   `json:"accWorkTime"`
 	AccRestTime float64   `json:"accRestTime"`
 	Count       float64   `json:"count"`
 	StartTime   time.Time `json:"startTime"`
@@ -177,12 +176,10 @@ func (s *State) StartPomodoro(stime time.Time) {
 			return
 		}
 
-		if s.Pomodoro.State == "b" {
-			if s.GetTimer() > s.Pomodoro.AccRestTime {
-				s.Pomodoro.AccRestTime = 0
-			} else {
-				s.Pomodoro.AccRestTime -= s.GetTimer()
-			}
+		if s.GetTimer() > s.Pomodoro.AccRestTime {
+			s.Pomodoro.AccRestTime = 0
+		} else {
+			s.Pomodoro.AccRestTime -= s.GetTimer()
 		}
 
 		s.Pomodoro.State = "w"
@@ -193,7 +190,6 @@ func (s *State) StartPomodoro(stime time.Time) {
 
 	s.Pomodoro = &Pomodoro{
 		State:       "w",
-		AccWorkTime: 0,
 		AccRestTime: 0,
 		StartTime:   stime,
 	}
@@ -207,10 +203,6 @@ func (s *State) GetTimer() float64 {
 	return time.Since(s.Pomodoro.StartTime).Minutes()
 }
 
-func (s *State) GetTimerWithAccum() float64 {
-	return s.Pomodoro.AccWorkTime + s.GetTimer()
-}
-
 func (s *State) EndPomodoro(etime time.Time) {
 	if !s.HasPomodoro() {
 		return
@@ -220,18 +212,9 @@ func (s *State) EndPomodoro(etime time.Time) {
 		return
 	}
 
-	at := s.GetTimerWithAccum()
-
-	if at < PomodoroWorkTime {
-		s.Pomodoro.State = "s"
-		s.Pomodoro.AccWorkTime += s.GetTimer()
-		return
-	}
-
-	wp := at / PomodoroWorkTime
+	wp := s.GetTimer() / PomodoroWorkTime
 
 	s.Pomodoro.Count += wp
-	s.Pomodoro.AccWorkTime = 0
 	s.Pomodoro.AccRestTime = wp * PomodoroBreakTime
 
 	for s.Pomodoro.Count >= 4 {
@@ -246,15 +229,13 @@ func (s *State) EndPomodoro(etime time.Time) {
 func (s *State) GetStatusProgress() int {
 	switch s.Pomodoro.State {
 	case "w":
-		return int(s.GetTimerWithAccum() / PomodoroWorkTime * 100)
+		return int(s.GetTimer() / PomodoroWorkTime * 100)
 	case "b":
 		t := s.GetTimer()
 		if t < s.Pomodoro.AccRestTime {
 			return int(t / s.Pomodoro.AccRestTime * 100)
 		}
 		return 100
-	case "s":
-		return int(s.Pomodoro.AccWorkTime / PomodoroWorkTime * 100)
 	}
 
 	return 0
