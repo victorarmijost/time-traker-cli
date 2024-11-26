@@ -1,125 +1,50 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"flag"
 	"log"
-	"math"
 	"os"
-	"varmijo/time-tracker/config"
-	"varmijo/time-tracker/repl"
-	"varmijo/time-tracker/state"
-	"varmijo/time-tracker/utils"
+
+	"varmijo/time-tracker/pkg/repl"
+	"varmijo/time-tracker/pkg/repl/myterm"
+	"varmijo/time-tracker/pkg/utils"
+	"varmijo/time-tracker/tt/app"
+	"varmijo/time-tracker/tt/infrastructure/cmd/handlers"
+	"varmijo/time-tracker/tt/infrastructure/config"
+	"varmijo/time-tracker/tt/infrastructure/repositories"
 
 	"github.com/sirupsen/logrus"
 )
 
 const logFile = "tt.log"
 
-type Kernel struct {
-	state   *state.State
-	config  *config.Config
-	recTemp *repl.TemplateHandler
-}
-
 func main() {
-	var login bool
-	flag.BoolVar(&login, "l", false, "Attempts login if the access token is expired")
+	cfg := config.MustNewConfig()
 
-	flag.Parse()
-
-	state := initState()
-	defer saveState(state)
-
-	cmds, closeTerm := initCmds(state)
-	defer closeTerm()
-
-	cmds.PrintTitle("Welcome to Time Tracker CLI tool")
-
-	config := initConfig()
-
-	file := setLogger(config.LogLevel)
+	file := setLogger(cfg.GetLogLevel())
 	defer file.Close()
 
-	recTemp := repl.NewTemplateHandler("rec")
-	err := recTemp.Load()
-
-	if err != nil {
-		cmds.PrintErrorMsg("Warning: there is no record tamplete created")
-	}
-
-	kern := &Kernel{
-		state:   state,
-		config:  config,
-		recTemp: recTemp,
-	}
-
-	if !config.IsComplete() {
-		runConfig(cmds, kern)
-	}
-
-	registerFunctions(cmds, kern)
-
-	cmds.Repl()
-}
-
-// Creates the Cmds object, which is in charge of the CLI.
-func initCmds(state *state.State) (*repl.Handler, repl.CloseTerm) {
-	cmds, close := repl.NewHandler(getPrompt(state), "exit")
-
-	return cmds, close
-}
-
-// Defines how the tasks time is rounded
-func timeRounding(time float64) float64 {
-	fact := float64(1) / 60
-	return float64(math.Round(float64(time)/fact) * fact)
-}
-
-// The state store the information of the current worked task
-func initState() *state.State {
-	state := state.NewState(timeRounding)
-
-	err := state.Load()
-
-	if errors.Is(err, os.ErrNotExist) {
-		return state
-	}
-
+	// Create sqlite DB
+	db, err := repositories.NewSQLiteDB("tt")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return state
-}
+	records := repositories.NewSQLiteRecordRepository(db)
 
-// The configuration stores all the application configurable values
-func initConfig() *config.Config {
-	c := config.NewConfig()
+	track := repositories.NewSQLiteTrackRepository(db)
 
-	err := c.Load()
+	app := app.NewApp(cfg, records, track)
 
-	if err != nil {
-		log.Fatal("config file can't be loaded, application can't start")
-	}
+	mux := handlers.NewHandlers(app)
 
-	return c
-}
+	term, close := myterm.NewTerm()
+	defer close()
 
-// Save the state before exit
-func saveState(state *state.State) {
-	err := state.Save()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+	term.PrintTitle("Welcome to Time Tracker CLI tool")
 
-// Runs all the application initial configurations
-func runConfig(r *repl.Handler, kern *Kernel) {
-	ctx := context.Background()
+	cmds := repl.NewRepl(app.GetPrompt(), mux, term, "exit")
 
-	SetWorkingTime(kern)(ctx, r)
+	cmds.Run()
 }
 
 // Set up the application logger

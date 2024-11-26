@@ -21,3 +21,4 @@ build/test
 
 *.png
 *.log
+build/tt.db
