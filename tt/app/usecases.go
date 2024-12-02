@@ -23,56 +23,41 @@ func (kern *App) AddRecord(ctx context.Context, hours float64) error {
 	return nil
 }
 
+func (kern *App) startRecordWithDate(ctx context.Context, recTime time.Time) error {
+	if kern.track.IsWorking(ctx) {
+		return fmt.Errorf("record already started")
+	}
+
+	record := domain.NewOpenRecord(recTime)
+
+	err := kern.track.Save(ctx, record)
+	if err != nil {
+		return fmt.Errorf("error saving new record, %w", err)
+	}
+
+	kern.pomodoro.Start(recTime)
+
+	return nil
+}
+
 // Add a new record
 func (kern *App) StartRecord(ctx context.Context) error {
 	if !kern.date.IsToday() {
 		return fmt.Errorf("wrong date, change back to today")
 	}
 
-	if kern.track.IsWorking(ctx) {
-		return fmt.Errorf("record already started")
-	}
-
 	recTime := time.Now()
 
-	record, err := domain.NewOpenRecord(recTime)
-	if err != nil {
-		return fmt.Errorf("error creating new record, %w", err)
-	}
-
-	err = kern.track.Save(ctx, record)
-	if err != nil {
-		return fmt.Errorf("error saving new record, %w", err)
-	}
-
-	kern.pomodoro.Start(recTime)
-
-	return nil
+	return kern.startRecordWithDate(ctx, recTime)
 }
 
 func (kern *App) StartRecordAt(ctx context.Context, hour time.Time) error {
-	if kern.track.IsWorking(ctx) {
-		return fmt.Errorf("record already started")
-	}
-
 	recTime := domain.SetDate(hour, kern.date.Get())
 
-	record, err := domain.NewOpenRecord(recTime)
-	if err != nil {
-		return fmt.Errorf("error creating new record, %w", err)
-	}
-
-	err = kern.track.Save(ctx, record)
-	if err != nil {
-		return fmt.Errorf("error saving new record, %w", err)
-	}
-
-	kern.pomodoro.Start(recTime)
-
-	return nil
+	return kern.startRecordWithDate(ctx, recTime)
 }
 
-func (kern *App) StopRecord(ctx context.Context) (float64, error) {
+func (kern *App) stopRecordWithDate(ctx context.Context, endTime time.Time) (float64, error) {
 	if !kern.track.IsWorking(ctx) {
 		return 0, fmt.Errorf("record not started")
 	}
@@ -82,16 +67,16 @@ func (kern *App) StopRecord(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	endTime := time.Now()
+	hours := 0.0
 
-	record, err := openRecord.CloseRecord(endTime)
-	if err != nil {
-		return 0, fmt.Errorf("can't close record, %w", err)
-	}
+	if !openRecord.IsEmpty(endTime) {
+		record, err := openRecord.CloseRecord(endTime)
+		if err != nil {
+			return 0, fmt.Errorf("can't close record, %w", err)
+		}
 
-	hours := record.Hours()
+		hours = record.Hours()
 
-	if hours != 0 {
 		err = kern.records.Save(ctx, record)
 		if err != nil {
 			return 0, fmt.Errorf("error inserting new record, %w", err)
@@ -108,36 +93,16 @@ func (kern *App) StopRecord(ctx context.Context) (float64, error) {
 	return hours, nil
 }
 
-func (kern *App) StopRecordAt(ctx context.Context, hour time.Time) (float64, error) {
-	if !kern.track.IsWorking(ctx) {
-		return 0, fmt.Errorf("record not started")
-	}
+func (kern *App) StopRecord(ctx context.Context) (float64, error) {
+	endTime := time.Now()
 
+	return kern.stopRecordWithDate(ctx, endTime)
+}
+
+func (kern *App) StopRecordAt(ctx context.Context, hour time.Time) (float64, error) {
 	endTime := domain.SetDate(hour, kern.date.Get())
 
-	openRecord, err := kern.track.Get(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	record, err := openRecord.CloseRecord(endTime)
-	if err != nil {
-		return 0, fmt.Errorf("can't close record, %w", err)
-	}
-
-	err = kern.records.Save(ctx, record)
-	if err != nil {
-		return 0, fmt.Errorf("error inserting new record, %w", err)
-	}
-
-	err = kern.track.Delete(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("error deleting open record, %w", err)
-	}
-
-	kern.pomodoro.End(endTime)
-
-	return record.Hours(), nil
+	return kern.stopRecordWithDate(ctx, endTime)
 }
 
 func (kern *App) CommitAll(ctx context.Context, pamount *float64) error {

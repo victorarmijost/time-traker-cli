@@ -34,9 +34,9 @@ func createTables(db *sqlx.DB) error {
 		return err
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS open_record (
-		id TEXT PRIMARY KEY,
-		date TEXT
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS state_variables (
+		key TEXT PRIMARY KEY,
+		value TEXT
 	)`)
 	if err != nil {
 		return err

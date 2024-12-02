@@ -21,12 +21,11 @@ func NewSQLiteTrackRepository(db *sqlx.DB) *SQLiteTrackRepository {
 
 func (r *SQLiteTrackRepository) Save(ctx context.Context, openRecord *domain.OpenRecord) error {
 	dbOpenRecord := DBOpenRecord{
-		Id:   openRecord.ID(),
 		Date: openRecord.Date().Format(time.RFC3339),
 	}
 
 	_, err := r.db.NamedExecContext(ctx,
-		`INSERT INTO open_record (id, date) VALUES (:id, :date)`,
+		`INSERT INTO state_variables (key, value) VALUES ('open_record_start_time', :date)`,
 		dbOpenRecord)
 
 	return err
@@ -34,7 +33,7 @@ func (r *SQLiteTrackRepository) Save(ctx context.Context, openRecord *domain.Ope
 
 func (r *SQLiteTrackRepository) Get(ctx context.Context) (*domain.OpenRecord, error) {
 	var dbOpenRecord DBOpenRecord
-	err := r.db.GetContext(ctx, &dbOpenRecord, `SELECT id, date FROM open_record LIMIT 1`)
+	err := r.db.GetContext(ctx, &dbOpenRecord, `SELECT value as date FROM state_variables WHERE key = 'open_record_start_time'`)
 	if err != nil {
 		return nil, err
 	}
@@ -44,17 +43,17 @@ func (r *SQLiteTrackRepository) Get(ctx context.Context) (*domain.OpenRecord, er
 		return nil, err
 	}
 
-	return domain.RecreateOpenRecord(dbOpenRecord.Id, date)
+	return domain.NewOpenRecord(date), nil
 }
 
 func (r *SQLiteTrackRepository) Delete(ctx context.Context) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM open_record`)
+	_, err := r.db.ExecContext(ctx, `DELETE FROM state_variables WHERE key = 'open_record_start_time'`)
 	return err
 }
 
 func (r *SQLiteTrackRepository) IsWorking(ctx context.Context) bool {
 	var count int
-	err := r.db.GetContext(ctx, &count, `SELECT COUNT(*) FROM open_record`)
+	err := r.db.GetContext(ctx, &count, `SELECT COUNT(*) FROM state_variables WHERE key = 'open_record_start_time'`)
 	if err != nil {
 		return false
 	}
@@ -63,7 +62,7 @@ func (r *SQLiteTrackRepository) IsWorking(ctx context.Context) bool {
 
 func (r *SQLiteTrackRepository) GetHours(ctx context.Context) (float64, error) {
 	var dbOpenRecord DBOpenRecord
-	err := r.db.GetContext(ctx, &dbOpenRecord, `SELECT id, date FROM open_record LIMIT 1`)
+	err := r.db.GetContext(ctx, &dbOpenRecord, `SELECT value as date FROM state_variables WHERE key = 'open_record_start_time'`)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
@@ -77,10 +76,7 @@ func (r *SQLiteTrackRepository) GetHours(ctx context.Context) (float64, error) {
 		return 0, err
 	}
 
-	openRecord, err := domain.RecreateOpenRecord(dbOpenRecord.Id, date)
-	if err != nil {
-		return 0, err
-	}
+	openRecord := domain.NewOpenRecord(date)
 
 	return openRecord.Hours(), nil
 }

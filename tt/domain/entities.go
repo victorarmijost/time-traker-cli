@@ -7,11 +7,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type Hours float64
+
+func NewHours(hours float64) (Hours, error) {
+	if hours <= 0 {
+		return 0, fmt.Errorf("hours must be greater than 0")
+	}
+
+	return Hours(hours), nil
+}
+
+func (r Hours) Float() float64 {
+	return float64(r)
+}
+
 type Record struct {
 	id     string
 	date   time.Time
 	status RecordStatus
-	hours  float64
+	hours  Hours
 }
 
 func RecreateRecord(id string, date time.Time, status string, hours float64) (*Record, error) {
@@ -22,11 +36,16 @@ func RecreateRecord(id string, date time.Time, status string, hours float64) (*R
 
 	hours = timeRounding(hours)
 
+	hoursValue, err := NewHours(hours)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Record{
 		id:     id,
 		date:   date,
 		status: statusType,
-		hours:  hours,
+		hours:  hoursValue,
 	}, nil
 }
 
@@ -39,7 +58,7 @@ func (r *Record) ID() string {
 }
 
 func (r *Record) Hours() float64 {
-	return r.hours
+	return r.hours.Float()
 }
 
 func (r *Record) Status() RecordStatus {
@@ -86,7 +105,14 @@ func (r *Record) UpdateHours(hours float64) error {
 		return fmt.Errorf("record is not pending, can't update hours")
 	}
 
-	r.hours = timeRounding(hours)
+	hours = timeRounding(hours)
+
+	hoursValue, err := NewHours(hours)
+	if err != nil {
+		return err
+	}
+
+	r.hours = hoursValue
 
 	return nil
 }
@@ -100,64 +126,39 @@ func (r *Record) updateDate(date time.Time) {
 }
 
 type OpenRecord struct {
-	r *Record
+	startDate time.Time
 }
 
-func RecreateOpenRecord(id string, date time.Time) (*OpenRecord, error) {
-	r, err := RecreateRecord(id, date, StatusOpen.String(), 0)
-	if err != nil {
-		return nil, err
-	}
-
+func NewOpenRecord(date time.Time) *OpenRecord {
 	return &OpenRecord{
-		r: r,
-	}, nil
+		startDate: date,
+	}
 }
 
-func NewOpenRecord(date time.Time) (*OpenRecord, error) {
-	r, err := RecreateRecord(uuid.New().String(), date, StatusOpen.String(), 0)
-	if err != nil {
-		return nil, err
+func (r *OpenRecord) CloseRecord(endDate time.Time) (*Record, error) {
+	hours := endDate.Sub(r.startDate).Hours()
+	if hours <= 0 {
+		return nil, fmt.Errorf("record is empty")
 	}
 
-	return &OpenRecord{
-		r: r,
-	}, nil
+	return NewCloseRecord(r.startDate, hours)
 }
 
-func (r *OpenRecord) CloseRecord(date time.Time) (*Record, error) {
-	record := r.r
-
-	if record.Status() != StatusOpen {
-		return nil, fmt.Errorf("record is not open")
-	}
-
-	record.updateStatus(StatusPending)
-
-	err := record.UpdateHours(date.Sub(record.date).Hours())
-	if err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-func (r *OpenRecord) ID() string {
-	return r.r.id
+func (r *OpenRecord) IsEmpty(endDate time.Time) bool {
+	return r.Hours() <= 0
 }
 
 func (r *OpenRecord) Date() time.Time {
-	return r.r.date
+	return r.startDate
 }
 
 func (r *OpenRecord) Hours() float64 {
-	return timeRounding(time.Since(r.r.date).Hours())
+	return timeRounding(time.Since(r.startDate).Hours())
 }
 
 type RecordStatus string
 
 const (
-	StatusOpen     RecordStatus = "open"     //Records that are open
 	StatusPending  RecordStatus = "pending"  //Records pending to commit
 	StatusCommited RecordStatus = "commited" //Records that are commited
 	StatusPool     RecordStatus = "pool"     //Records that are not attached to a date
@@ -165,7 +166,7 @@ const (
 
 func NewRecordStatus(status string) (RecordStatus, error) {
 	switch s := RecordStatus(status); s {
-	case StatusOpen, StatusCommited, StatusPending, StatusPool:
+	case StatusCommited, StatusPending, StatusPool:
 		return s, nil
 	default:
 		return "", fmt.Errorf("invalid status")

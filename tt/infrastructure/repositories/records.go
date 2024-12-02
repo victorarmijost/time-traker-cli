@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"time"
 	"varmijo/time-tracker/tt/domain"
 
@@ -18,10 +17,6 @@ func NewSQLiteRecordRepository(db *sqlx.DB) *SQLiteRecordRepository {
 }
 
 func (r *SQLiteRecordRepository) Save(ctx context.Context, record *domain.Record) error {
-	if record.Hours() == 0 {
-		return fmt.Errorf("can't save record with 0 hours")
-	}
-
 	dbRecord := DBRecord{
 		Id:     record.ID(),
 		Date:   record.Date().Format(time.RFC3339),

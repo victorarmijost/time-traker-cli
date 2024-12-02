@@ -8,6 +8,5 @@ type DBRecord struct {
 }
 
 type DBOpenRecord struct {
-	Id   string `db:"id"`
 	Date string `db:"date"`
 }
