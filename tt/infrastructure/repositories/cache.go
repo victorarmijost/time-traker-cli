@@ -1,6 +1,8 @@
 package repositories
 
-import "sync"
+import (
+	"sync"
+)
 
 type dbCache struct {
 	records map[string]any
@@ -29,6 +31,7 @@ func getFromCache[T any](c *dbCache, key string, value *T) bool {
 	}
 
 	*value = iv
+
 	return true
 }
 

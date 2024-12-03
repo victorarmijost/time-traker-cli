@@ -80,7 +80,7 @@ func (r *SQLiteRecordRepository) Get(ctx context.Context, id string) (*domain.Re
 func (r *SQLiteRecordRepository) GetAllByDateStatus(ctx context.Context, date time.Time, status domain.RecordStatus) ([]*domain.Record, error) {
 	var dbRecords []*DBRecord
 
-	key := fmt.Sprintf("get-all:%s:%s", date.Format(time.RFC3339), status.String())
+	key := fmt.Sprintf("get-all:%s:%s", date.Format("060102"), status.String())
 
 	if !getFromCache(r.cache, key, &dbRecords) {
 		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10) AND status = ?`, date.Format(time.RFC3339), status.String())
@@ -142,7 +142,7 @@ func (r *SQLiteRecordRepository) GetAllByStatus(ctx context.Context, status doma
 func (r *SQLiteRecordRepository) GetHoursByDateStatus(ctx context.Context, date time.Time, status domain.RecordStatus) (float64, error) {
 	var totalHours *float64
 
-	key := fmt.Sprintf("get-hours:%s:%s", date.Format(time.RFC3339), status.String())
+	key := fmt.Sprintf("get-hours:%s:%s", date.Format("060102"), status.String())
 
 	if !getFromCache(r.cache, key, &totalHours) {
 		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10) AND status = ?`, date.Format(time.RFC3339), status.String())
@@ -150,11 +150,11 @@ func (r *SQLiteRecordRepository) GetHoursByDateStatus(ctx context.Context, date 
 			return 0, err
 		}
 
-		setInCache(r.cache, key, totalHours)
-	}
+		if totalHours == nil {
+			totalHours = new(float64)
+		}
 
-	if totalHours == nil {
-		return 0, nil
+		setInCache(r.cache, key, totalHours)
 	}
 
 	return *totalHours, nil
@@ -171,11 +171,11 @@ func (r *SQLiteRecordRepository) GetHoursByStatus(ctx context.Context, status do
 			return 0, err
 		}
 
-		setInCache(r.cache, key, totalHours)
-	}
+		if totalHours == nil {
+			totalHours = new(float64)
+		}
 
-	if totalHours == nil {
-		return 0, nil
+		setInCache(r.cache, key, totalHours)
 	}
 
 	return *totalHours, nil
