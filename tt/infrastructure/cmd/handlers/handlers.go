@@ -189,5 +189,22 @@ func (h *Handlers) DeleteStoredRecord(r *repl.Request, w repl.IO) {
 }
 
 func (h *Handlers) EditStoredRecord(r *repl.Request, w repl.IO) {
+}
 
+func (h *Handlers) GetDebts(r *repl.Request, w repl.IO) {
+	debts, err := h.kern.GetDebts(r.Ctx())
+	if err != nil {
+		repl.PrintError(w, err)
+		return
+	}
+
+	if len(debts) == 0 {
+		repl.PrintInfoMsg(w, "No debt found")
+		return
+	}
+
+	repl.PrintHighightedMsg(w, "Result")
+	for _, r := range debts {
+		repl.PrintPlain(w, fmt.Sprintf("%s: %0.2f", r.Date().Format("2006-01-02"), r.Hours()))
+	}
 }

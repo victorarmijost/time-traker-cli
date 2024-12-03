@@ -185,3 +185,27 @@ const (
 )
 
 type Prompt func(PromptType) string
+
+type Debt struct {
+	date  time.Time
+	hours float64
+}
+
+func NewDebt(date time.Time, hours float64) (*Debt, error) {
+	if hours <= 0 {
+		return nil, fmt.Errorf("hours must be greater than 0")
+	}
+
+	return &Debt{
+		date:  date,
+		hours: hours,
+	}, nil
+}
+
+func (d *Debt) Date() time.Time {
+	return d.date
+}
+
+func (d *Debt) Hours() float64 {
+	return d.hours
+}

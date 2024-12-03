@@ -18,6 +18,7 @@ type RecordRepository interface {
 	GetAllByStatus(ctx context.Context, status RecordStatus) ([]*Record, error)
 	GetHoursByDateStatus(ctx context.Context, date time.Time, status RecordStatus) (float64, error)
 	GetHoursByStatus(ctx context.Context, status RecordStatus) (float64, error)
+	GetDebts(ctx context.Context) ([]*Debt, error)
 }
 
 type TrackRepository interface {

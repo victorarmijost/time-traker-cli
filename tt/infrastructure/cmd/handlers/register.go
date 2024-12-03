@@ -22,4 +22,7 @@ func (h *Handlers) Register() {
 
 	//Navigate
 	h.mux.Handle("change date", repl.HandleFunc(h.ChangeDate), "Date")
+
+	//Stats
+	h.mux.Handle("debt", repl.HandleFunc(h.GetDebts))
 }

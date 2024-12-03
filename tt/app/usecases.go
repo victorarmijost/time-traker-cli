@@ -294,3 +294,7 @@ func (kern *App) PourePool(ctx context.Context) error {
 func (kern *App) GetEditableRecords(ctx context.Context) ([]*domain.Record, error) {
 	return kern.records.GetAllByDateStatus(ctx, kern.date.Get(), domain.StatusPending)
 }
+
+func (kern *App) GetDebts(ctx context.Context) ([]*domain.Debt, error) {
+	return kern.records.GetDebts(ctx)
+}

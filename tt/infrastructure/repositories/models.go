@@ -10,3 +10,8 @@ type DBRecord struct {
 type DBOpenRecord struct {
 	Date string `db:"date"`
 }
+
+type DBDebt struct {
+	Date  string  `db:"date"`
+	Hours float64 `db:"hours"`
+}

@@ -159,3 +159,42 @@ func (r *SQLiteRecordRepository) GetHoursByStatus(ctx context.Context, status do
 		return *totalHours, nil
 	})
 }
+
+func (r *SQLiteRecordRepository) GetDebts(ctx context.Context) ([]*domain.Debt, error) {
+	key := "get-debts"
+
+	return withCache(r.cache, key, func() ([]*domain.Debt, error) {
+		var dbDebts []*DBDebt
+		err := r.db.SelectContext(ctx, &dbDebts, `
+			SELECT date,hours
+			FROM(
+			SELECT DATE(date,'localtime') as date,8-sum(hours) as hours 
+			FROM records r 
+			WHERE strftime('%u',DATE(date,'localtime')) BETWEEN '1' and '5'
+			group by DATE(date,'localtime')
+			)
+			WHERE hours > 0
+			ORDER BY date DESC;
+		`)
+		if err != nil {
+			return nil, err
+		}
+
+		debts := make([]*domain.Debt, len(dbDebts))
+		for i, dbDebt := range dbDebts {
+			date, err := time.Parse("2006-01-02", dbDebt.Date)
+			if err != nil {
+				return nil, err
+			}
+
+			debt, err := domain.NewDebt(date, dbDebt.Hours)
+			if err != nil {
+				return nil, err
+			}
+
+			debts[i] = debt
+		}
+
+		return debts, nil
+	})
+}
