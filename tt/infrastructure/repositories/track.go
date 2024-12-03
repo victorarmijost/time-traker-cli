@@ -76,24 +76,32 @@ func (r *SQLiteTrackRepository) IsWorking(ctx context.Context) bool {
 
 func (r *SQLiteTrackRepository) GetHours(ctx context.Context) (float64, error) {
 	key := "get:hours"
-	return withCache(r.cache, key, func() (float64, error) {
+	openRecord, err := withCache(r.cache, key, func() (*domain.OpenRecord, error) {
 		var dbOpenRecord DBOpenRecord
 		err := r.db.GetContext(ctx, &dbOpenRecord, `SELECT value as date FROM state_variables WHERE key = 'open_record_start_time'`)
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
+			return nil, nil
 		}
 
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 
 		date, err := time.Parse(time.RFC3339, dbOpenRecord.Date)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 
-		openRecord := domain.NewOpenRecord(date)
-
-		return openRecord.Hours(), nil
+		return domain.NewOpenRecord(date), nil
 	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	if openRecord == nil {
+		return 0, nil
+	}
+
+	return openRecord.Hours(), nil
 }
