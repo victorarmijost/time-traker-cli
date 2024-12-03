@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"varmijo/time-tracker/tt/domain"
 
@@ -9,11 +10,15 @@ import (
 )
 
 type SQLiteRecordRepository struct {
-	db *sqlx.DB
+	db    *sqlx.DB
+	cache *dbCache
 }
 
 func NewSQLiteRecordRepository(db *sqlx.DB) *SQLiteRecordRepository {
-	return &SQLiteRecordRepository{db: db}
+	return &SQLiteRecordRepository{
+		db:    db,
+		cache: newDBCache(),
+	}
 }
 
 func (r *SQLiteRecordRepository) Save(ctx context.Context, record *domain.Record) error {
@@ -29,19 +34,39 @@ func (r *SQLiteRecordRepository) Save(ctx context.Context, record *domain.Record
 		ON CONFLICT(id) DO UPDATE SET date = excluded.date, status = excluded.status, hours = excluded.hours`,
 		dbRecord)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	resetCache(r.cache)
+
+	return nil
 }
 
 func (r *SQLiteRecordRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM records WHERE id = ?`, id)
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	resetCache(r.cache)
+
+	return nil
 }
 
 func (r *SQLiteRecordRepository) Get(ctx context.Context, id string) (*domain.Record, error) {
 	var dbRecord DBRecord
-	err := r.db.GetContext(ctx, &dbRecord, `SELECT id, date, status, hours FROM records WHERE id = ?`, id)
-	if err != nil {
-		return nil, err
+
+	key := fmt.Sprintf("get:%s", id)
+
+	if !getFromCache(r.cache, key, &dbRecord) {
+		err := r.db.GetContext(ctx, &dbRecord, `SELECT id, date, status, hours FROM records WHERE id = ?`, id)
+		if err != nil {
+			return nil, err
+		}
+
+		setInCache(r.cache, key, dbRecord)
 	}
 
 	date, err := time.Parse(time.RFC3339, dbRecord.Date)
@@ -54,9 +79,16 @@ func (r *SQLiteRecordRepository) Get(ctx context.Context, id string) (*domain.Re
 
 func (r *SQLiteRecordRepository) GetAllByDateStatus(ctx context.Context, date time.Time, status domain.RecordStatus) ([]*domain.Record, error) {
 	var dbRecords []*DBRecord
-	err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE DATE(date) = DATE(?) AND status = ?`, date.Format(time.RFC3339), status.String())
-	if err != nil {
-		return nil, err
+
+	key := fmt.Sprintf("get-all:%s:%s", date.Format(time.RFC3339), status.String())
+
+	if !getFromCache(r.cache, key, &dbRecords) {
+		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE DATE(date) = DATE(?) AND status = ?`, date.Format(time.RFC3339), status.String())
+		if err != nil {
+			return nil, err
+		}
+
+		setInCache(r.cache, key, dbRecords)
 	}
 
 	records := make([]*domain.Record, len(dbRecords))
@@ -78,9 +110,16 @@ func (r *SQLiteRecordRepository) GetAllByDateStatus(ctx context.Context, date ti
 
 func (r *SQLiteRecordRepository) GetAllByStatus(ctx context.Context, status domain.RecordStatus) ([]*domain.Record, error) {
 	var dbRecords []*DBRecord
-	err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE status = ?`, status.String())
-	if err != nil {
-		return nil, err
+
+	key := fmt.Sprintf("get-all:%s", status.String())
+
+	if !getFromCache(r.cache, key, &dbRecords) {
+		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE status = ?`, status.String())
+		if err != nil {
+			return nil, err
+		}
+
+		setInCache(r.cache, key, dbRecords)
 	}
 
 	records := make([]*domain.Record, len(dbRecords))
@@ -102,9 +141,16 @@ func (r *SQLiteRecordRepository) GetAllByStatus(ctx context.Context, status doma
 
 func (r *SQLiteRecordRepository) GetHoursByDateStatus(ctx context.Context, date time.Time, status domain.RecordStatus) (float64, error) {
 	var totalHours *float64
-	err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE DATE(date) = DATE(?) AND status = ?`, date.Format(time.RFC3339), status.String())
-	if err != nil {
-		return 0, err
+
+	key := fmt.Sprintf("get-hours:%s:%s", date.Format(time.RFC3339), status.String())
+
+	if !getFromCache(r.cache, key, &totalHours) {
+		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE DATE(date) = DATE(?) AND status = ?`, date.Format(time.RFC3339), status.String())
+		if err != nil {
+			return 0, err
+		}
+
+		setInCache(r.cache, key, totalHours)
 	}
 
 	if totalHours == nil {
@@ -116,9 +162,16 @@ func (r *SQLiteRecordRepository) GetHoursByDateStatus(ctx context.Context, date 
 
 func (r *SQLiteRecordRepository) GetHoursByStatus(ctx context.Context, status domain.RecordStatus) (float64, error) {
 	var totalHours *float64
-	err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE status = ?`, status.String())
-	if err != nil {
-		return 0, err
+
+	key := fmt.Sprintf("get-hours:%s", status.String())
+
+	if !getFromCache(r.cache, key, &totalHours) {
+		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE status = ?`, status.String())
+		if err != nil {
+			return 0, err
+		}
+
+		setInCache(r.cache, key, totalHours)
 	}
 
 	if totalHours == nil {
