@@ -83,7 +83,7 @@ func (r *SQLiteRecordRepository) GetAllByDateStatus(ctx context.Context, date ti
 	key := fmt.Sprintf("get-all:%s:%s", date.Format(time.RFC3339), status.String())
 
 	if !getFromCache(r.cache, key, &dbRecords) {
-		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE DATE(date) = DATE(?) AND status = ?`, date.Format(time.RFC3339), status.String())
+		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10) AND status = ?`, date.Format(time.RFC3339), status.String())
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func (r *SQLiteRecordRepository) GetHoursByDateStatus(ctx context.Context, date 
 	key := fmt.Sprintf("get-hours:%s:%s", date.Format(time.RFC3339), status.String())
 
 	if !getFromCache(r.cache, key, &totalHours) {
-		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE DATE(date) = DATE(?) AND status = ?`, date.Format(time.RFC3339), status.String())
+		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10) AND status = ?`, date.Format(time.RFC3339), status.String())
 		if err != nil {
 			return 0, err
 		}
