@@ -248,6 +248,10 @@ func (kern *App) ChangeDate(ctx context.Context, date time.Time) error {
 }
 
 func (kern *App) DropRecord(ctx context.Context) (float64, error) {
+	if !kern.track.IsWorking(ctx) {
+		return 0, fmt.Errorf("record not started")
+	}
+
 	openRecord, err := kern.track.Get(ctx)
 	if err != nil {
 		return 0, err
