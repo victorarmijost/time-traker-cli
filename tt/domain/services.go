@@ -188,3 +188,7 @@ func (s *PomodoroInMemory) Clear() {
 func TodayIsWeekend() bool {
 	return time.Now().Weekday() == time.Saturday || time.Now().Weekday() == time.Sunday
 }
+
+type Displayer interface {
+	Show(string)
+}

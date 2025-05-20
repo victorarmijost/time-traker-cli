@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log"
 	"os"
 
-	"varmijo/time-tracker/pkg/repl"
-	"varmijo/time-tracker/pkg/repl/myterm"
-	"varmijo/time-tracker/pkg/utils"
 	"varmijo/time-tracker/tt/app"
 	"varmijo/time-tracker/tt/infrastructure/cmd/handlers"
+	"varmijo/time-tracker/tt/infrastructure/cmd/repl"
+	"varmijo/time-tracker/tt/infrastructure/cmd/repl/myterm"
 	"varmijo/time-tracker/tt/infrastructure/config"
+	"varmijo/time-tracker/tt/infrastructure/display"
 	"varmijo/time-tracker/tt/infrastructure/repositories"
+	"varmijo/time-tracker/tt/infrastructure/utils"
 
 	"github.com/sirupsen/logrus"
 )
@@ -19,14 +19,13 @@ const logFile = "tt.log"
 
 func main() {
 	cfg := config.MustNewConfig()
-
 	file := setLogger(cfg.GetLogLevel())
 	defer file.Close()
 
 	// Create sqlite DB
 	db, err := repositories.NewSQLiteDB("tt")
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatalf("Failed to create SQLite DB: %v", err)
 	}
 
 	records := repositories.NewSQLiteRecordRepository(db)
@@ -37,23 +36,30 @@ func main() {
 
 	app := app.NewApp(cfg, records, track, stats)
 
+	gui := display.NewGUI(app)
+
 	mux := handlers.NewHandlers(app)
 
-	term, close := myterm.NewTerm()
-	defer close()
+	term, closeTerm := myterm.NewTerm()
+	defer closeTerm()
 
 	term.PrintTitle("Welcome to Time Tracker CLI tool")
 
-	cmds := repl.NewRepl(app.GetPrompt(), mux, term, "exit")
+	cmds := repl.NewRepl(app.GetPromptData(), mux, term, "exit")
 
-	cmds.Run()
+	go func() {
+		cmds.Run()
+		gui.Done()
+	}()
+
+	gui.Run()
 }
 
 // Set up the application logger
 func setLogger(slevel string) *os.File {
 	file, err := os.OpenFile(utils.GeAppPath(logFile), os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	logrus.SetOutput(file)

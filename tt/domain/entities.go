@@ -177,14 +177,17 @@ func (s RecordStatus) String() string {
 	return string(s)
 }
 
-type PromptType uint32
-
-const (
-	FULL_UPDATE PromptType = iota
-	SOFT_UPDATE
-)
-
-type Prompt func(PromptType) string
+type PropmptData interface {
+	RefreshData()
+	Wt() float64
+	Ct() float64
+	Pt() float64
+	Tt() float64
+	Dt() float64
+	IsWorking() bool
+	IsToday() bool
+	GetDate() time.Time
+}
 
 type Debt struct {
 	debt        map[time.Time]float64

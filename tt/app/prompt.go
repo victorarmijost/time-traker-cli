@@ -2,95 +2,92 @@ package app
 
 import (
 	"context"
-	"fmt"
-	"strings"
+	"sync"
 	"time"
 
 	"varmijo/time-tracker/tt/domain"
 )
 
-func (kern *App) GetPrompt() domain.Prompt {
-	var (
-		wt, ct, pt, tt, dt float64
-	)
+type promptData struct {
+	app                *App
+	wt, ct, pt, tt, dt float64
+	sync.RWMutex
+}
 
-	return func(pk domain.PromptType) string {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+var promptDataInstance *promptData
+var promptDataOnce sync.Once
 
-		date := kern.date.Get()
+func (p *promptData) RefreshData() {
+	p.Lock()
+	defer p.Unlock()
 
-		if pk == domain.FULL_UPDATE {
-			wt = domain.Must(kern.stats.GetHoursByDateStatus(ctx, date, domain.StatusPending))
-			ct = domain.Must(kern.stats.GetHoursByDateStatus(ctx, date, domain.StatusCommited))
-			pt = domain.Must(kern.stats.GetHoursByStatus(ctx, domain.StatusPool))
-			tt = domain.Must(kern.stats.GetTrackedHours(ctx))
-			dt = domain.Must(kern.stats.GetDebt(ctx, kern.config.GetWorkTime())).Total()
-		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		statusBar := ""
+	date := p.app.date.Get()
 
-		if dt > 0 {
-			statusBar = fmt.Sprintf("[Debt:%s]", domain.FormatDuration(dt))
-		}
+	p.wt = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusPending))
+	p.ct = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusCommited))
+	p.pt = domain.Must(p.app.stats.GetHoursByStatus(ctx, domain.StatusPool))
+	p.tt = domain.Must(p.app.stats.GetTrackedHours(ctx))
+	p.dt = domain.Must(p.app.stats.GetDebt(ctx, p.app.config.GetWorkTime())).Total()
+}
 
-		if wt > 0 {
-			statusBar = fmt.Sprintf("%s[Worked:%s]", statusBar, domain.FormatDuration(wt))
-		}
+func (p *promptData) Wt() float64 {
+	p.RLock()
+	defer p.RUnlock()
+	return p.wt
+}
+func (p *promptData) Ct() float64 {
+	p.RLock()
+	defer p.RUnlock()
+	return p.ct
+}
+func (p *promptData) Pt() float64 {
+	p.RLock()
+	defer p.RUnlock()
+	return p.pt
+}
+func (p *promptData) Tt() float64 {
+	p.RLock()
+	defer p.RUnlock()
+	return p.tt
+}
+func (p *promptData) Dt() float64 {
+	p.RLock()
+	defer p.RUnlock()
+	return p.dt
+}
+func (p *promptData) IsWorking() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
 
-		if ct > 0 {
-			statusBar = fmt.Sprintf("%s[Commited:%s]", statusBar, domain.FormatDuration(ct))
-		}
+	return p.app.track.IsWorking(ctx)
+}
+func (p *promptData) IsToday() bool {
+	return p.app.date.IsToday()
+}
 
-		if pt > 0 {
-			statusBar = fmt.Sprintf("%s[Pool:%s]", statusBar, domain.FormatDuration(pt))
-		}
+func (p *promptData) GetDate() time.Time {
+	return p.app.date.Get()
+}
 
-		if kern.track.IsWorking(ctx) {
-			statusBar = fmt.Sprintf("%s[Rec:%s][%s]", statusBar, domain.FormatDuration(tt), getClockEmoji())
-		}
-
-		if !kern.date.IsToday() {
-			statusBar = fmt.Sprintf("%s[%s]", statusBar, kern.date.Get().Format("06-01-02"))
-		}
-
-		if kern.pomodoro.Has() {
-			pomState := kern.pomodoro.GetState()
-			pomProg := kern.pomodoro.GetProgress()
-
-			statusBar = fmt.Sprintf("%s[%s:%d%%]", statusBar, pomState, pomProg)
-
-			if pomState == "b" {
-				statusBar = fmt.Sprintf("%s[%0.f]", statusBar, kern.pomodoro.GetBreakTime())
-			}
-
-			if pomProg >= 100 {
-				statusBar = fmt.Sprintf("%s%s", statusBar, getAlertEmoji())
-			}
-		}
-
-		if statusBar != "" {
-			return fmt.Sprintf("%s tt", statusBar)
-		}
-
-		return "tt"
+func (p *promptData) keepRefreshing() {
+	for range time.Tick(60 * time.Second) {
+		p.RefreshData()
 	}
 }
 
-const clocksEmojis = `. '`
+func (kern *App) GetPromptData() domain.PropmptData {
+	promptDataOnce.Do(func() {
+		promptDataInstance = &promptData{
+			app: kern,
+		}
 
-func getClockEmoji() string {
-	clocks := strings.Split(clocksEmojis, " ")
+		promptDataInstance.RefreshData()
 
-	n := int64(len(clocks))
+		go promptDataInstance.keepRefreshing()
+	})
 
-	return strings.TrimSpace(clocks[time.Now().Unix()%n])
-}
-
-func getAlertEmoji() string {
-	alerts := []string{"{!}", "{ }"}
-
-	n := int64(len(alerts))
-
-	return alerts[time.Now().Unix()%n]
+	return promptDataInstance
 }

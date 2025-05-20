@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	"varmijo/time-tracker/pkg/repl"
 	"varmijo/time-tracker/tt/app"
 	"varmijo/time-tracker/tt/domain"
+	"varmijo/time-tracker/tt/infrastructure/cmd/repl"
 
-	"varmijo/time-tracker/pkg/repl/mux"
+	"varmijo/time-tracker/tt/infrastructure/cmd/repl/mux"
 )
 
 type Handlers struct {

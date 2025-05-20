@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"time"
-	"varmijo/time-tracker/pkg/utils"
+	"varmijo/time-tracker/tt/infrastructure/utils"
 )
 
 type config struct {

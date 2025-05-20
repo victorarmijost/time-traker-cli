@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"fmt"
-	"varmijo/time-tracker/pkg/utils"
+	"varmijo/time-tracker/tt/infrastructure/utils"
 
 	"github.com/jmoiron/sqlx"
 

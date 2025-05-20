@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 	"time"
-	"varmijo/time-tracker/pkg/repl"
+	"varmijo/time-tracker/tt/infrastructure/cmd/repl"
 
 	"golang.org/x/term"
 )

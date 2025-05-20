@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"varmijo/time-tracker/pkg/repl"
+	"varmijo/time-tracker/tt/infrastructure/cmd/repl"
 )
 
 func (h *Handlers) Register() {
