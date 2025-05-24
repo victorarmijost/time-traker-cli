@@ -31,16 +31,6 @@ type DateState interface {
 	IsToday() bool
 }
 
-type PomodoroState interface {
-	Clear()
-	GetState() string
-	Has() bool
-	GetBreakTime() float64
-	GetProgress() int
-	Start(time.Time)
-	End(time.Time)
-}
-
 type DateInMemory struct {
 	date *time.Time
 }
@@ -68,121 +58,6 @@ func (d *DateInMemory) Set(date time.Time) {
 
 func (d *DateInMemory) IsToday() bool {
 	return d.date == nil
-}
-
-const (
-	PomodoroWorkTime      = 25
-	PomodoroBreakTime     = 5
-	PomodoroLongBreakTime = 15
-)
-
-type PomodoroInMemory struct {
-	has         bool
-	state       string
-	accRestTime float64
-	count       float64
-	startTime   time.Time
-}
-
-func NewPomodoroInMemory() *PomodoroInMemory {
-	return &PomodoroInMemory{}
-}
-
-// TODO: temporary disable pomodoro
-func (s *PomodoroInMemory) Has() bool {
-	return false
-}
-
-func (s *PomodoroInMemory) GetState() string {
-	if s.Has() {
-		return s.state
-	}
-
-	return ""
-}
-
-func (s *PomodoroInMemory) Start(stime time.Time) {
-	if s.Has() {
-		if s.state == "w" {
-			return
-		}
-
-		if s.GetTimer() > s.accRestTime {
-			s.accRestTime = 0
-		} else {
-			s.accRestTime -= s.GetTimer()
-		}
-
-		s.state = "w"
-		s.startTime = stime
-
-		s.has = true
-
-		return
-	}
-
-	s.state = "w"
-	s.startTime = stime
-
-	s.has = true
-}
-
-func (s *PomodoroInMemory) GetTimer() float64 {
-	if !s.Has() {
-		return 0
-	}
-
-	return time.Since(s.startTime).Minutes()
-}
-
-func (s *PomodoroInMemory) End(etime time.Time) {
-	if !s.Has() {
-		return
-	}
-
-	if s.state != "w" {
-		return
-	}
-
-	wp := s.GetTimer() / PomodoroWorkTime
-
-	s.count += wp
-	s.accRestTime = wp * PomodoroBreakTime
-
-	for s.count >= 4 {
-		s.accRestTime += PomodoroLongBreakTime - PomodoroBreakTime
-		s.count -= 4
-	}
-
-	s.startTime = etime
-	s.state = "b"
-}
-
-func (s *PomodoroInMemory) GetProgress() int {
-	switch s.state {
-	case "w":
-		return int(s.GetTimer() / PomodoroWorkTime * 100)
-	case "b":
-		t := s.GetTimer()
-		if t < s.accRestTime {
-			return int(t / s.accRestTime * 100)
-		}
-		return 100
-	}
-
-	return 0
-}
-
-func (s *PomodoroInMemory) GetBreakTime() float64 {
-	if s.Has() {
-		return s.accRestTime
-	}
-
-	return 0
-}
-
-func (s *PomodoroInMemory) Clear() {
-	s.has = false
 }
 
 func TodayIsWeekend() bool {

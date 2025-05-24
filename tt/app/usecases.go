@@ -36,8 +36,6 @@ func (kern *App) startRecordWithDate(ctx context.Context, recTime time.Time) err
 		return fmt.Errorf("error saving new record, %w", err)
 	}
 
-	kern.pomodoro.Start(recTime)
-
 	return nil
 }
 
@@ -95,8 +93,6 @@ func (kern *App) stopRecordWithDate(ctx context.Context, endTime time.Time) (flo
 	if err != nil {
 		return 0, fmt.Errorf("error deleting open record, %w", err)
 	}
-
-	kern.pomodoro.End(endTime)
 
 	return hours, nil
 }
@@ -198,8 +194,6 @@ func (kern *App) CommitAll(ctx context.Context, pamount *float64) error {
 
 		remTime -= record.Hours()
 	}
-
-	kern.pomodoro.Clear()
 
 	return nil
 }
