@@ -1,159 +1,313 @@
 # Time Tracker CLI
 
-This tool allows to insert time records, into the BairesDev Time Tracker; it is build in Go (Golang), you will need the Golang compailer to build it. The latest build excutable is available on the build folder, even though I recomend to build your own version from the code.
+A personal time tracking tool built in Go that helps you manage and track your work hours. This is a lightweight, terminal-based application that stores time records locally using SQLite and provides both a command-line interface (REPL) and a system tray GUI.
 
-The login process works on top of the Time Tracker web application; to use the application you will need to login with your Google account, that process is simulated using the Go [Chromedp](https://pkg.go.dev/github.com/chromedp/chromedp#section-readme) package, which required that you have ***Google Chrome installed***.
+## Features
 
-To compile the application run:
-```
+- 📊 **Time Tracking**: Start/stop time recording with precise tracking
+- 💾 **Local Storage**: SQLite database for reliable local data storage
+- 🖥️ **Dual Interface**: Terminal REPL + System tray GUI
+- ⏰ **Focus Timer**: Built-in Pomodoro-style focus sessions
+- 📅 **Date Management**: Work across different dates
+- 🪣 **Pool System**: Manage overflow hours for flexible time allocation
+- 📈 **Debt Tracking**: Monitor accumulated work debt
+- 🎯 **Status Management**: Track pending, committed, and pooled time
+
+## Installation
+
+### Prerequisites
+- Go 1.21 or higher
+- A terminal that supports ANSI colors
+
+### Building from Source
+
+```bash
+# Clone or download the repository
+cd time-tracker-cli
+
+# Build the application
 sh build.sh
 ```
 
-It will create a binary called `tt`, use this to execute it:
-```
+This creates a binary called `tt` in the `build/` directory.
+
+### Running the Application
+
+```bash
 ./build/tt
 ```
 
-The first time that you open the application, it will create its required folders structure and it will ask you for your some configuration information like your focal point and your project.
+On first run, the application will:
+1. Create necessary directory structure
+2. Initialize SQLite database
+3. Create a configuration file (`config.json`)
+4. Start both the terminal interface and system tray GUI
 
-The tool works with a REPL (Read-Eval-Print loop), where you have to send a command to perform an action, you can see the list of available commands by using:
+## Configuration
 
+The application creates a `config.json` file with the following settings:
+
+```json
+{
+    "logLevel": "info",
+    "workingTime": 8.0
+}
 ```
+
+- `logLevel`: Controls logging verbosity (error, info, debug)
+- `workingTime`: Your daily working hours (used for debt calculation)
+
+## Command Line Interface
+
+The tool provides a REPL (Read-Eval-Print Loop) interface. Type `help` to see available commands:
+
+### Basic Usage
+
+```bash
 tt > help
 ```
 
-To use one of the commands, just send the command name, and the tool will requested you the needed arguments.
+### Quick Command Syntax
 
-Example:
+Commands support both interactive and quick syntax:
 
-```
+**Interactive:**
+```bash
 tt > rec
+- At: 09:00
+**** Record started at 09:00! ****
+```
 
-- #: bug
+**Quick syntax:**
+```bash
+tt > rec at; 09:00
+**** Record started at 09:00! ****
+```
 
-- Comment: issue with accounts
+## Available Commands
 
+### Time Recording
+- **`rec`** - Start a new time recorder
+- **`rec at`** - Start recording at a specific time (format: HH:MM)
+- **`end`** - End current time recording
+- **`end at`** - End recording at a specific time
+- **`drop`** - Drop current recording without saving
+- **`add`** - Manually add a time record with specified hours
+
+### Record Management
+- **`list`** - Show all records for current date
+- **`commit`** - Mark records as committed (accepts amount parameter)
+- **`send pool`** - Send pending records to the pool
+- **`poure`** - Pour pool time to current date
+
+### Navigation & Utilities
+- **`change date`** - Change working date (formats: `yy-mm-dd`, `yesterday`, `now`, `±N` days)
+- **`debt`** - Show accumulated work debt
+- **`help`** - Show command list
+
+## System Tray GUI
+
+The application also provides a system tray interface with:
+
+- 🔥 **Focus Timer**: 2-minute focus sessions with visual feedback
+- 🍅 **Pomodoro Timer**: 25-minute work sessions
+- ⏯️ **Start/Stop**: Quick recording controls
+- 📊 **Status Display**: Real-time work statistics in tooltip
+
+### GUI States
+- **💤 Idle**: Not currently recording
+- **🔥 Focus**: In a focus session (2 min)
+- **🍅 Pomodoro**: In a Pomodoro session (25 min)
+- **⌛ Working**: Recording without timers
+
+## Workflow
+
+### Basic Daily Workflow
+
+1. **Start Recording**: Use `rec` to begin tracking time
+2. **Work Sessions**: Use focus/Pomodoro timers for productivity
+3. **End Recording**: Use `end` to stop and save your work session
+4. **Review**: Use `list` to see your recorded time
+5. **Commit**: Use `commit` to mark time as final
+6. **Manage Overflow**: Use pool system for time that exceeds daily limits
+
+### Example Session
+
+```bash
+# Start recording
+tt > rec
 **** Record started! ****
+
+# Check current status
+[Rec:0.25]['] tt > list
+Result
+1. 0.25
+
+# End recording after work
+tt > end
+**** 2.50 hours inserted! ****
+
+# Commit your time
+tt > commit; 8
+**** Records committed! ****
 ```
 
-The tool also allows the following syntax (which we call a short version):
+## Status Bar
 
-`{command name}; {arg 1}; {arg 2}; {arg 3}...`
+The terminal prompt shows real-time status information:
 
-Example:
-```
-tt > rec; bug; issue with accounts
-
-**** Record started! ****
+```bash
+[Debt:2.0][Worked:1.25][Commited:6.00][Pool:0.50][Rec:0.25]['] tt >
 ```
 
-The provided arguments will be filled in the required command fields.
+- **Debt**: Accumulated work time debt (hours behind)
+- **Worked**: Time worked today (not yet committed)
+- **Committed**: Time marked as committed today
+- **Pool**: Available time in the pool
+- **Rec**: Currently recording time
+- **Date**: Shows date if not today (format: yy-mm-dd)
 
-Most of the commands works by requesting a set of fields and providing a sigle response after all the fields are provided, we call them *action commands*. Even though, there are some special commands the doesn't follow this pattern, we call them *interactive commands* (i.e. `temp add`)
+## Pool System
 
-Some commands like: `rec` or `add` are using templates; a template is a way to predefine the fields for some records,you can create a new template by using `temp add`.
+The pool manages time that exceeds your configured daily working hours:
 
-There are some templates already created under the `build/templates/rec` folder, but you can delete them and add your own templates. Use `temp list` to see all the created templates.
+- **Overflow Protection**: When committing more than your daily limit, excess goes to pool
+- **Weekend Work**: Weekend recordings automatically go to pool
+- **Flexible Allocation**: Pour pool time to any date when needed
 
-Session management
-==
-In order to access the Time Tracker data and to be able to insert the information when you send a `commit`, the system need to log you in to the Time Tracker, this is done emulating a web session using the Google Chrome headless feature using the Chromedp go library. The first time that you login, and every time that your ***session expires***, you will be asked for your password and the login process will be executed again.
-```
-************************************************
-** Welcome to BairedDev Time Tracker CLI tool **
-************************************************
+```bash
+# Send today's work to pool
+tt > send pool
+**** Records saved to pool! ****
 
-- Google password:
-
-**** Performing Google login, it will take a while please wait... ****
-
-**** Login successfull!! ****
-```
-
-This is the less smooth part of the application, since emulating the login in that way is slow; even though as soon as you have a valid session you can continue working without having to login again, even you can close the application during some time, and open it again without having to login again.
-
-Workflow
-==
-
-This is the workflow which was used to design the tool:
-
-1. Use `rec` to start a time recorder. It will request a template (you must have some created already); and, if it is required, a description; tt will record this information along with the initial time.
-2. Use `view` to see your current working task.
-3. Use `end` to complete your task, it will use the current time and the recored start time to calculate the worked time.
-4. Repeate the process for all you day tasks.
-5. Use `list` to see all your recorded time.
-6. Use `commit` to send your records to the BairesDev Time Tracker.
-7. Use `poure` to add the time on your pool to the current date. Se below for more details.
-
-Edge cases
-==
-
-1. If you missed to record some time, you can use `add` to manually add it, it will request a template, an if it is required, a description and a task duration (in hours).
-2. If you added a recored by mistake, you can use `delete` to remove it.
-3. If you missed the start time of a task that you are currently working, use `rec at` to start it at a defined hour.
-4. If you missed the end time of a task that you are currently working, use `end at` it will calculate the time base on the end hour that you provide.
-5. If started the time record with the wrong template, use `edit` to change the record information, keeping the same start time.
-6. If you want to edit an exiting record, you can use `edit stored` to see the record details and change it.
-
-The tool works on today's date by default; but you can use `change date` to change to another date. This can be useful to add missing records for a previous day, you must use `add` to add time on a diffent date.
-
-The `change date` command expect the date in the format `yy-mm-dd`, even though some other special syntaxes are allowed:
-1. `change date; now`, `change date; today` and `change date;`: changes the date back to the current day.
-2. `change date; yesterday`: changes the date to the previous day date.
-3. `change date; {N}`: where `{N}` is an integer number, changes the date by the specified number, for example `change date; -3`, changes the date 3 days back; and `change date; 5` change the date 5 days in the future.
-
-Batch usage
-==
-You might need to add multiple records at the same time, in that case you can do the following:
-
-1. Create a file `tasks.txt` with all your commands:
-```
-add; bug; first task; 0.5
-add; feat; second task; 1
-add; meeting; third task; 2
-``` 
-2. Open the application and login to the it, to create a session. If you have not done the configuration process yet, you will need to do it.
-```
-./build/tt
-```
-3. Exit the aplication:
-```
-tt > exit
-```
-4. Send the commands in your file:
-```
-./build/tt < tasks.txt
+# Pour pool time to current date
+tt > poure
+**** Pool poured! ****
 ```
 
-Status bar
-==
+## Date Management
 
-When you are using the application, the prompt may change adding some status values:
+The tool works with today's date by default, but supports flexible date navigation:
+
+### Date Commands
+
+```bash
+# Change to specific date
+tt > change date; 24-05-23
+
+# Quick date shortcuts
+tt > change date; yesterday
+tt > change date; now        # back to today
+tt > change date; -3         # 3 days ago
+tt > change date; 5          # 5 days in future
 ```
-[Worked:0.25][Commited:9.00][Pool:0.25][Tracking:0.25] tt >
+
+### Supported Date Formats
+- `yy-mm-dd`: Specific date (e.g., `24-05-23`)
+- `yesterday`: Previous day
+- `now`, `today`, or empty: Current day
+- `±N`: Relative days (e.g., `-3` for 3 days ago, `5` for 5 days ahead)
+
+## Time Recording Details
+
+### Time Precision
+- Time is recorded in 1-minute precision
+- Display rounds to nearest minute for readability
+- Internal calculations maintain full precision
+
+### Recording States
+- **Pending**: New records waiting to be committed
+- **Committed**: Records marked as final work
+- **Pool**: Overflow or weekend work available for allocation
+
+### Smart Features
+- **Weekend Detection**: Weekend work automatically goes to pool
+- **Overflow Management**: Excess daily time automatically pooled
+- **Debt Tracking**: Monitors accumulated work debt across weekdays
+
+## File Structure
+
+The application creates the following structure in the executable's directory:
+
+```
+build/
+├── tt              # Main executable
+├── config.json     # Configuration file
+├── tt.db          # SQLite database
+└── tt.log         # Application logs
 ```
 
-1. ***Worked***: Is the total time that you have worked during the day and that is not commited. Once you commit this time will be added to Commited.
-2. ***Commited***: Is the total time that you have worked during the day that is commited.
-3. ***Tracking***: is the time worked on the current task. Once you end the task this time will be added to Worked.
-4. ***Pool***: is the time that could not bee commited becuase it exceed your configured daily working time. See below for more details.
+### Configuration File (`config.json`)
+```json
+{
+    "logLevel": "info",
+    "workingTime": 8.0
+}
+```
 
-Pool
-=
-If you exceed your daily working time limit, when you `commit` your time, the remaining time will be save in your `pool`, you can later `poure` that time on another working day.
+### Database Schema
+The SQLite database contains:
+- **records**: Time entries with ID, date, status, and hours
+- **state_variables**: Application state (e.g., current recording)
 
-For now, we the tool is not handling records for extra time.
+## Dependencies
 
-Time Recording
-==
-By using the command `rec` you can start a timer and record your time, you will notice the tracked time on the status bar as `[Tracking:0.50]` notice that the time is tracked in quarters of an hour, also rounds to the closer quarter of hour if it is a fraction of time. So, it will show first `0.00`, in your first 7.5 minutes of work, then `0.25` between 7.5 and 22.5 minutes; then it will show `0.50` in the next 15 minutes and so on.
+The application uses the following Go modules:
 
-Application folders structure
-==
+- `github.com/getlantern/systray` - System tray GUI
+- `github.com/jmoiron/sqlx` - Database operations
+- `github.com/mattn/go-sqlite3` - SQLite driver
+- `github.com/sirupsen/logrus` - Logging
+- `golang.org/x/term` - Terminal interface
+- `github.com/google/uuid` - UUID generation
 
-The first time you open the application, it will create it own folder structure. This are the relevant files under those folders:
-1. ***.tmp***: it stores temporary files like the application state and a cache.
-2. ***local***: it a folders base local db, to store the time records before commiting them, the records are store here on `.json` format.
-3. ***templates***: commands like `rec` or `add` uses templates (see above); those templates are saved here on `.json` format. The template fields that starts with "x-" are information fields, which means that they don't store values required by the template.
+## Troubleshooting
 
-Besides that, you will see a `config.json` file, which stores your email, project, focal point, and working time information, all this information is required when you first run the application. If this file is removed, all the information will be required again when run the application.
+### Common Issues
+
+1. **Terminal not supported**: Ensure your terminal supports ANSI colors and terminal mode
+2. **Permissions**: Make sure the build directory is writable
+3. **System tray not showing**: Some desktop environments require additional setup
+
+### Logs
+
+Check `tt.log` in the build directory for detailed error information:
+
+```bash
+tail -f build/tt.log
+```
+
+### Reset Configuration
+
+To reset the application:
+```bash
+rm build/config.json build/tt.db
+```
+
+## Development
+
+### Project Structure
+
+```
+├── cmd/           # Application entry point
+├── tt/
+│   ├── app/       # Application layer
+│   ├── domain/    # Business logic
+│   └── infrastructure/
+│       ├── cmd/   # Command handling
+│       ├── config/ # Configuration
+│       ├── display/ # GUI components
+│       └── repositories/ # Data access
+└── build.sh       # Build script
+```
+
+### Building for Development
+
+```bash
+go mod download
+go build -o build/tt cmd/*.go
+```
+
+## License
+
+MIT License - see LICENSE file for details.
