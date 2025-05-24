@@ -22,3 +22,4 @@ build/test
 *.png
 *.log
 build/*
+.DS_Store
