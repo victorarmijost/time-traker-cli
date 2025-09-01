@@ -125,7 +125,7 @@ func (kern *App) CommitAll(ctx context.Context, pamount *float64) error {
 		return err
 	}
 
-	commitedTime, err := kern.stats.GetHoursByDateStatus(ctx, kern.date.Get(), domain.StatusCommited)
+	commitedTime, err := kern.stats.GetHoursByDateStatus(ctx, kern.date.Get(), domain.StatusCommitted)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func (kern *App) ListLocal(ctx context.Context) ([]string, error) {
 		list = append(list, fmt.Sprintf("%.2f", r.Hours()))
 	}
 
-	commitedRecords, err := kern.records.GetAllByDateStatus(ctx, kern.date.Get(), domain.StatusCommited)
+	commitedRecords, err := kern.records.GetAllByDateStatus(ctx, kern.date.Get(), domain.StatusCommitted)
 
 	if err != nil {
 		err = fmt.Errorf("can't get records, %w", err)
@@ -275,14 +275,14 @@ func (kern *App) DropRecord(ctx context.Context) (float64, error) {
 	return record.Hours(), nil
 }
 
-func (kern *App) PourePool(ctx context.Context) error {
+func (kern *App) PourPool(ctx context.Context) error {
 	records, err := kern.records.GetAllByStatus(ctx, domain.StatusPool)
 	if err != nil {
 		return err
 	}
 
 	for _, record := range records {
-		err := record.Poure(kern.date.Get())
+		err := record.Pour(kern.date.Get())
 		if err != nil {
 			return err
 		}

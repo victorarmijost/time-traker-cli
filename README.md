@@ -98,7 +98,7 @@ tt > rec at; 09:00
 - **`list`** - Show all records for current date
 - **`commit`** - Mark records as committed (accepts amount parameter)
 - **`send pool`** - Send pending records to the pool
-- **`poure`** - Pour pool time to current date
+- **`pour`** - Pour pool time to current date
 
 ### Navigation & Utilities
 - **`change date`** - Change working date (formats: `yy-mm-dd`, `yesterday`, `now`, `±N` days)
@@ -181,7 +181,7 @@ tt > send pool
 **** Records saved to pool! ****
 
 # Pour pool time to current date
-tt > poure
+tt > pour
 **** Pool poured! ****
 ```
 

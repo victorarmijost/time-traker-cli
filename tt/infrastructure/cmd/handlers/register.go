@@ -17,7 +17,7 @@ func (h *Handlers) Register() {
 	h.mux.Handle("drop", repl.HandleFunc(h.DropRecord))
 	h.mux.Handle("list", repl.HandleFunc(h.ListLocal))
 	//h.mux.Handle("edit stored", repl.HandleFunc(h.EditStoredRecord))
-	h.mux.Handle("poure", repl.HandleFunc(h.PourePool))
+	h.mux.Handle("pour", repl.HandleFunc(h.PourPool))
 	//h.mux.Handle("delete", repl.HandleFunc(h.DeleteStoredRecord))
 
 	//Navigate

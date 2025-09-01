@@ -11,11 +11,11 @@ import (
 type Repl struct {
 	io      IO
 	handler Handler
-	data    domain.PropmptData
+	data    domain.PromptData
 	exit    string
 }
 
-func NewRepl(data domain.PropmptData, handler Handler, io IO, exit string) *Repl {
+func NewRepl(data domain.PromptData, handler Handler, io IO, exit string) *Repl {
 	h := &Repl{
 		io:      io,
 		handler: handler,

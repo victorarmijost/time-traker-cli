@@ -160,8 +160,8 @@ func (h *Handlers) ListLocal(r *repl.Request, w repl.IO) {
 	}
 }
 
-func (h *Handlers) PourePool(r *repl.Request, w repl.IO) {
-	err := h.kern.PourePool(r.Ctx())
+func (h *Handlers) PourPool(r *repl.Request, w repl.IO) {
+	err := h.kern.PourPool(r.Ctx())
 	if err != nil {
 		repl.PrintError(w, err)
 		return

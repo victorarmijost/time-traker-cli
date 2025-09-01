@@ -24,7 +24,7 @@ const (
 type GUI struct {
 	done          chan struct{}
 	app           *app.App
-	propmptData   domain.PropmptData
+	propmptData   domain.PromptData
 	focusTimer    *time.Time
 	pomodoroTimer *time.Time
 	recordingMenu *systray.MenuItem

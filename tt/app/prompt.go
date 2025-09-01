@@ -27,7 +27,7 @@ func (p *promptData) RefreshData() {
 	date := p.app.date.Get()
 
 	p.wt = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusPending))
-	p.ct = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusCommited))
+	p.ct = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusCommitted))
 	p.pt = domain.Must(p.app.stats.GetHoursByStatus(ctx, domain.StatusPool))
 	p.tt = domain.Must(p.app.stats.GetTrackedHours(ctx))
 	p.dt = domain.Must(p.app.stats.GetDebt(ctx, p.app.config.GetWorkTime())).Total()
@@ -78,7 +78,7 @@ func (p *promptData) keepRefreshing() {
 	}
 }
 
-func (kern *App) GetPromptData() domain.PropmptData {
+func (kern *App) GetPromptData() domain.PromptData {
 	promptDataOnce.Do(func() {
 		promptDataInstance = &promptData{
 			app: kern,

@@ -79,9 +79,9 @@ func (r *Record) SendToPool() error {
 	return nil
 }
 
-func (r *Record) Poure(date time.Time) error {
+func (r *Record) Pour(date time.Time) error {
 	if r.status != StatusPool {
-		return fmt.Errorf("record is not in pool, can't poure")
+		return fmt.Errorf("record is not in pool, can't pour")
 	}
 
 	r.updateDate(date)
@@ -95,7 +95,7 @@ func (r *Record) Commit() error {
 		return fmt.Errorf("record is not pending, can't commit")
 	}
 
-	r.updateStatus(StatusCommited)
+	r.updateStatus(StatusCommitted)
 
 	return nil
 }
@@ -159,14 +159,14 @@ func (r *OpenRecord) Hours() float64 {
 type RecordStatus string
 
 const (
-	StatusPending  RecordStatus = "pending"  //Records pending to commit
-	StatusCommited RecordStatus = "commited" //Records that are commited
-	StatusPool     RecordStatus = "pool"     //Records that are not attached to a date
+	StatusPending   RecordStatus = "pending"   //Records pending to commit
+	StatusCommitted RecordStatus = "committed" //Records that are committed
+	StatusPool      RecordStatus = "pool"      //Records that are not attached to a date
 )
 
 func NewRecordStatus(status string) (RecordStatus, error) {
 	switch s := RecordStatus(status); s {
-	case StatusCommited, StatusPending, StatusPool:
+	case StatusCommitted, StatusPending, StatusPool:
 		return s, nil
 	default:
 		return "", fmt.Errorf("invalid status")
@@ -177,7 +177,7 @@ func (s RecordStatus) String() string {
 	return string(s)
 }
 
-type PropmptData interface {
+type PromptData interface {
 	RefreshData()
 	Wt() float64
 	Ct() float64

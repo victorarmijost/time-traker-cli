@@ -14,7 +14,7 @@ func (h *Handlers) AddHelp() {
 	h.mux.AddHelp("list", "List all the records on the current date.")
 	h.mux.AddHelp("view", "Allow to view the current time recorder.")
 	h.mux.AddHelp("edit stored", "Allows to edit a non commited recored.")
-	h.mux.AddHelp("poure", "Poures all the time on the pool to the current date.")
+	h.mux.AddHelp("pour", "Poures all the time on the pool to the current date.")
 	h.mux.AddHelp("delete", "Allows to delete a non commited recored.")
 
 	//Navigate
