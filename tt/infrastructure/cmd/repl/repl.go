@@ -68,6 +68,8 @@ func (c *Repl) promptUpdate(forceRefresh bool) {
 
 	if c.data.Dt() > 0 {
 		statusBar = fmt.Sprintf("[Debt:%s]", domain.FormatDuration(c.data.Dt()))
+	} else if c.data.Dt() < 0 {
+		statusBar = fmt.Sprintf("[Pool:%s]", domain.FormatDuration(-c.data.Dt()))
 	}
 
 	if c.data.Wt() > 0 {

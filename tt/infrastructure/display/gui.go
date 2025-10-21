@@ -82,6 +82,8 @@ func (g *GUI) tooltipText() string {
 
 	if g.propmptData.Dt() > 0 {
 		statusBar = fmt.Sprintf("💳 %s", domain.FormatDuration(g.propmptData.Dt()))
+	} else if g.propmptData.Dt() < 0 {
+		statusBar = fmt.Sprintf("🪣 %s", domain.FormatDuration(-g.propmptData.Dt()))
 	}
 
 	if g.propmptData.Wt() > 0 {
