@@ -32,8 +32,8 @@ func (r *SQLiteRecordRepository) Save(ctx context.Context, record *domain.Record
 		}
 
 		_, err := r.db.NamedExecContext(ctx,
-			`INSERT INTO records (id, date, status, hours) VALUES (:id, :date, "commited", :hours)
-		ON CONFLICT(id) DO UPDATE SET date = excluded.date, status = excluded.status, hours = excluded.hours`,
+			`INSERT INTO records (id, date, hours) VALUES (:id, :date, :hours)
+		ON CONFLICT(id) DO UPDATE SET date = excluded.date, hours = excluded.hours`,
 			dbRecord)
 
 		return err

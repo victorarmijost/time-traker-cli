@@ -27,7 +27,6 @@ func createTables(db *sqlx.DB) error {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS records (
 		id TEXT PRIMARY KEY,
 		date TEXT,
-		status TEXT,
 		hours REAL
 	)`)
 	if err != nil {
