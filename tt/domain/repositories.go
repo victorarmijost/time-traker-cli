@@ -14,15 +14,14 @@ type RecordRepository interface {
 	Save(ctx context.Context, r *Record) error
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (*Record, error)
-	GetAllByDateStatus(ctx context.Context, date time.Time, status RecordStatus) ([]*Record, error)
-	GetAllByStatus(ctx context.Context, status RecordStatus) ([]*Record, error)
+	GetAllByDate(ctx context.Context, date time.Time) ([]*Record, error)
 }
 
 type StatsRepository interface {
-	GetHoursByDateStatus(ctx context.Context, date time.Time, status RecordStatus) (float64, error)
-	GetHoursByStatus(ctx context.Context, status RecordStatus) (float64, error)
+	GetHoursByDate(ctx context.Context, date time.Time) (float64, error)
+	//GetHoursByStatus(ctx context.Context, status RecordStatus) (float64, error)
 	GetTrackedHours(ctx context.Context) (float64, error)
-	GetDebt(ctx context.Context, workingTime float64) (*Debt, error)
+	GetDebt(ctx context.Context, workingTime float64) (float64, error)
 }
 
 type TrackRepository interface {

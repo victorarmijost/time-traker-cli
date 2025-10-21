@@ -88,14 +88,6 @@ func (g *GUI) tooltipText() string {
 		statusBar = fmt.Sprintf("%s\n🔨 %s", statusBar, domain.FormatDuration(g.propmptData.Wt()))
 	}
 
-	if g.propmptData.Ct() > 0 {
-		statusBar = fmt.Sprintf("%s\n🔒 %s", statusBar, domain.FormatDuration(g.propmptData.Ct()))
-	}
-
-	if g.propmptData.Pt() > 0 {
-		statusBar = fmt.Sprintf("%s\n🪣 %s", statusBar, domain.FormatDuration(g.propmptData.Pt()))
-	}
-
 	if !g.propmptData.IsToday() {
 		statusBar = fmt.Sprintf("%s\n📅 %s", statusBar, g.propmptData.GetDate().Format("02/Jan/06"))
 	}

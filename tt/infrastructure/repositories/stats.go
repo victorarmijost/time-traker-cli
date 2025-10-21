@@ -23,13 +23,13 @@ func NewSQLiteStatsRepository(db *sqlx.DB) *SQLiteStatsRepository {
 	}
 }
 
-func (r *SQLiteStatsRepository) GetHoursByDateStatus(ctx context.Context, date time.Time, status domain.RecordStatus) (float64, error) {
-	key := fmt.Sprintf("get-hours:%s:%s", date.Format("060102"), status.String())
+func (r *SQLiteStatsRepository) GetHoursByDate(ctx context.Context, date time.Time) (float64, error) {
+	key := fmt.Sprintf("get-hours:%s", date.Format("060102"))
 
 	return withCache(r.cache, key, func() (float64, error) {
 		var totalHours *float64
 
-		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10) AND status = ?`, date.Format(time.RFC3339), status.String())
+		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10)`, date.Format(time.RFC3339))
 		if err != nil {
 			return 0, err
 		}
@@ -42,79 +42,54 @@ func (r *SQLiteStatsRepository) GetHoursByDateStatus(ctx context.Context, date t
 	})
 }
 
-func (r *SQLiteStatsRepository) GetHoursByStatus(ctx context.Context, status domain.RecordStatus) (float64, error) {
-	key := fmt.Sprintf("get-hours:%s", status.String())
-
-	return withCache(r.cache, key, func() (float64, error) {
-		var totalHours *float64
-		err := r.db.GetContext(ctx, &totalHours, `SELECT SUM(hours) FROM records WHERE status = ?`, status.String())
-		if err != nil {
-			return 0, err
-		}
-
-		if totalHours == nil {
-			return 0, nil
-		}
-
-		return *totalHours, nil
-	})
-}
-
-func (r *SQLiteStatsRepository) GetDebt(ctx context.Context, workingTime float64) (*domain.Debt, error) {
+func (r *SQLiteStatsRepository) GetDebt(ctx context.Context, workingTime float64) (float64, error) {
 	key := "get-debts"
 
-	dbDebts, err := withCache(r.cache, key, func() ([]*DBDebt, error) {
-		var dbDebts []*DBDebt
-		err := r.db.SelectContext(ctx, &dbDebts, `
-			SELECT date,hours
-			FROM(
-			SELECT DATE(date,'localtime') as date,?-sum(hours) as hours 
-			FROM records r 
-			WHERE strftime('%u',DATE(date,'localtime')) BETWEEN '1' and '5'
-			group by DATE(date,'localtime')
-			)
-			WHERE hours > 0
-			ORDER BY date DESC;
+	dbDebt, err := withCache(r.cache, key, func() (*DBDebt, error) {
+		var dbDebt DBDebt
+		err := r.db.GetContext(ctx, &dbDebt, `
+			SELECT min(date) date,sum(hours) hours FROM records
 		`, workingTime)
 		if err != nil {
 			return nil, err
 		}
 
-		return dbDebts, nil
+		return &dbDebt, nil
 	})
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	debt := domain.NewDebt()
-	for _, dbDebt := range dbDebts {
-		date, err := time.Parse("2006-01-02", dbDebt.Date)
-		if err != nil {
-			return nil, err
-		}
-
-		err = debt.Set(date, dbDebt.Hours)
-		if err != nil {
-			return nil, err
-		}
+	startDate, err := time.Parse(time.RFC3339, dbDebt.StartDate)
+	if err != nil {
+		return 0, err
 	}
+
+	expectedHours := getExpectedHours(workingTime, startDate)
+	debt := expectedHours - dbDebt.Hours
 
 	trackedHours, err := r.GetTrackedHours(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	debt.Adjust(trackedHours)
+	return debt - trackedHours, nil
+}
 
-	pool, err := r.GetHoursByStatus(ctx, domain.StatusPool)
-	if err != nil {
-		return nil, err
+func getExpectedHours(workingTime float64, startDate time.Time) float64 {
+	now := time.Now()
+
+	total := 0
+	for date := startDate; date.Before(now); date = date.AddDate(0, 0, 1) {
+		if domain.IsWeekend(date) {
+			continue
+		}
+
+		total++
 	}
 
-	debt.Adjust(pool)
-
-	return debt, nil
+	return float64(total) * workingTime
 }
 
 func (r *SQLiteStatsRepository) GetTrackedHours(ctx context.Context) (float64, error) {

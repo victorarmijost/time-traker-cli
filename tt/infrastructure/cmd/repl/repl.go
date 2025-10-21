@@ -74,14 +74,6 @@ func (c *Repl) promptUpdate(forceRefresh bool) {
 		statusBar = fmt.Sprintf("%s[Worked:%s]", statusBar, domain.FormatDuration(c.data.Wt()))
 	}
 
-	if c.data.Ct() > 0 {
-		statusBar = fmt.Sprintf("%s[Commited:%s]", statusBar, domain.FormatDuration(c.data.Ct()))
-	}
-
-	if c.data.Pt() > 0 {
-		statusBar = fmt.Sprintf("%s[Pool:%s]", statusBar, domain.FormatDuration(c.data.Pt()))
-	}
-
 	if c.data.IsWorking() {
 		statusBar = fmt.Sprintf("%s[Rec:%s][%s]", statusBar, domain.FormatDuration(c.data.Tt()), getClockEmoji())
 	}

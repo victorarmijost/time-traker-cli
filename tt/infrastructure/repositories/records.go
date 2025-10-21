@@ -26,14 +26,13 @@ func NewSQLiteRecordRepository(db *sqlx.DB) *SQLiteRecordRepository {
 func (r *SQLiteRecordRepository) Save(ctx context.Context, record *domain.Record) error {
 	return withResetCache(r.cache, func() error {
 		dbRecord := DBRecord{
-			Id:     record.ID(),
-			Date:   record.Date().Format(time.RFC3339),
-			Status: record.Status().String(),
-			Hours:  record.Hours(),
+			Id:    record.ID(),
+			Date:  record.Date().Format(time.RFC3339),
+			Hours: record.Hours(),
 		}
 
 		_, err := r.db.NamedExecContext(ctx,
-			`INSERT INTO records (id, date, status, hours) VALUES (:id, :date, :status, :hours)
+			`INSERT INTO records (id, date, status, hours) VALUES (:id, :date, "commited", :hours)
 		ON CONFLICT(id) DO UPDATE SET date = excluded.date, status = excluded.status, hours = excluded.hours`,
 			dbRecord)
 
@@ -54,7 +53,7 @@ func (r *SQLiteRecordRepository) Get(ctx context.Context, id string) (*domain.Re
 	return withCache(r.cache, key, func() (*domain.Record, error) {
 		var dbRecord DBRecord
 
-		err := r.db.GetContext(ctx, &dbRecord, `SELECT id, date, status, hours FROM records WHERE id = ?`, id)
+		err := r.db.GetContext(ctx, &dbRecord, `SELECT id, date, hours FROM records WHERE id = ?`, id)
 		if err != nil {
 			return nil, err
 		}
@@ -64,17 +63,17 @@ func (r *SQLiteRecordRepository) Get(ctx context.Context, id string) (*domain.Re
 			return nil, err
 		}
 
-		return domain.RecreateRecord(dbRecord.Id, date, dbRecord.Status, dbRecord.Hours)
+		return domain.RecreateRecord(dbRecord.Id, date, dbRecord.Hours)
 	})
 }
 
-func (r *SQLiteRecordRepository) GetAllByDateStatus(ctx context.Context, date time.Time, status domain.RecordStatus) ([]*domain.Record, error) {
-	key := fmt.Sprintf("get-all:%s:%s", date.Format("060102"), status.String())
+func (r *SQLiteRecordRepository) GetAllByDate(ctx context.Context, date time.Time) ([]*domain.Record, error) {
+	key := fmt.Sprintf("get-all:%s", date.Format("060102"))
 
 	return withCache(r.cache, key, func() ([]*domain.Record, error) {
 		var dbRecords []*DBRecord
 
-		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10) AND status = ?`, date.Format(time.RFC3339), status.String())
+		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, hours FROM records WHERE SUBSTR(date,1,10) = SUBSTR(?,1,10)`, date.Format(time.RFC3339))
 		if err != nil {
 			return nil, err
 		}
@@ -86,35 +85,7 @@ func (r *SQLiteRecordRepository) GetAllByDateStatus(ctx context.Context, date ti
 				return nil, err
 			}
 
-			record, err := domain.RecreateRecord(dbRecord.Id, date, dbRecord.Status, dbRecord.Hours)
-			if err != nil {
-				return nil, err
-			}
-			records[i] = record
-		}
-
-		return records, nil
-	})
-}
-
-func (r *SQLiteRecordRepository) GetAllByStatus(ctx context.Context, status domain.RecordStatus) ([]*domain.Record, error) {
-	key := fmt.Sprintf("get-all:%s", status.String())
-
-	return withCache(r.cache, key, func() ([]*domain.Record, error) {
-		var dbRecords []*DBRecord
-		err := r.db.SelectContext(ctx, &dbRecords, `SELECT id, date, status, hours FROM records WHERE status = ?`, status.String())
-		if err != nil {
-			return nil, err
-		}
-
-		records := make([]*domain.Record, len(dbRecords))
-		for i, dbRecord := range dbRecords {
-			date, err := time.Parse(time.RFC3339, dbRecord.Date)
-			if err != nil {
-				return nil, err
-			}
-
-			record, err := domain.RecreateRecord(dbRecord.Id, date, dbRecord.Status, dbRecord.Hours)
+			record, err := domain.RecreateRecord(dbRecord.Id, date, dbRecord.Hours)
 			if err != nil {
 				return nil, err
 			}

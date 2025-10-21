@@ -12,17 +12,8 @@ func (h *Handlers) Register() {
 
 	h.mux.Handle("end", repl.HandleFunc(h.StopRecord))
 	h.mux.Handle("end at", repl.HandleFunc(h.StopRecordAt), "At")
-	h.mux.Handle("commit", repl.HandleFunc(h.CommitAll), "Amount")
-	h.mux.Handle("send pool", repl.HandleFunc(h.SendToPool))
 	h.mux.Handle("drop", repl.HandleFunc(h.DropRecord))
-	h.mux.Handle("list", repl.HandleFunc(h.ListLocal))
-	//h.mux.Handle("edit stored", repl.HandleFunc(h.EditStoredRecord))
-	h.mux.Handle("pour", repl.HandleFunc(h.PourPool))
-	//h.mux.Handle("delete", repl.HandleFunc(h.DeleteStoredRecord))
 
 	//Navigate
 	h.mux.Handle("change date", repl.HandleFunc(h.ChangeDate), "Date")
-
-	//Stats
-	h.mux.Handle("debt", repl.HandleFunc(h.GetDebts))
 }

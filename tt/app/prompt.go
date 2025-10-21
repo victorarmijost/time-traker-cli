@@ -9,8 +9,8 @@ import (
 )
 
 type promptData struct {
-	app                *App
-	wt, ct, pt, tt, dt float64
+	app        *App
+	wt, tt, dt float64
 	sync.RWMutex
 }
 
@@ -26,27 +26,15 @@ func (p *promptData) RefreshData() {
 
 	date := p.app.date.Get()
 
-	p.wt = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusPending))
-	p.ct = domain.Must(p.app.stats.GetHoursByDateStatus(ctx, date, domain.StatusCommitted))
-	p.pt = domain.Must(p.app.stats.GetHoursByStatus(ctx, domain.StatusPool))
+	p.wt = domain.Must(p.app.stats.GetHoursByDate(ctx, date))
 	p.tt = domain.Must(p.app.stats.GetTrackedHours(ctx))
-	p.dt = domain.Must(p.app.stats.GetDebt(ctx, p.app.config.GetWorkTime())).Total()
+	p.dt = domain.Must(p.app.stats.GetDebt(ctx, p.app.config.GetWorkTime()))
 }
 
 func (p *promptData) Wt() float64 {
 	p.RLock()
 	defer p.RUnlock()
 	return p.wt
-}
-func (p *promptData) Ct() float64 {
-	p.RLock()
-	defer p.RUnlock()
-	return p.ct
-}
-func (p *promptData) Pt() float64 {
-	p.RLock()
-	defer p.RUnlock()
-	return p.pt
 }
 func (p *promptData) Tt() float64 {
 	p.RLock()

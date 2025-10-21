@@ -60,8 +60,8 @@ func (d *DateInMemory) IsToday() bool {
 	return d.date == nil
 }
 
-func TodayIsWeekend() bool {
-	return time.Now().Weekday() == time.Saturday || time.Now().Weekday() == time.Sunday
+func IsWeekend(date time.Time) bool {
+	return date.Weekday() == time.Saturday || date.Weekday() == time.Sunday
 }
 
 type Displayer interface {
