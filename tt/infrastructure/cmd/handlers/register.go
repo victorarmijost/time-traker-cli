@@ -16,4 +16,8 @@ func (h *Handlers) Register() {
 
 	//Navigate
 	h.mux.Handle("change date", repl.HandleFunc(h.ChangeDate), "Date")
+
+	//Timer
+	h.mux.Handle("timer", repl.HandleFunc(h.StartTimer), "Duration")
+	h.mux.Handle("timer stop", repl.HandleFunc(h.StopTimer))
 }

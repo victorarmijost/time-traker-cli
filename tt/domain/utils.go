@@ -39,6 +39,19 @@ func ParseDuration(sd string) (float64, error) {
 	return float64(hours) + float64(minutes)/60, nil
 }
 
+func ParseTimerDuration(sd string) (time.Duration, error) {
+	hours, err := ParseDuration(sd)
+	if err != nil {
+		return 0, err
+	}
+
+	if hours <= 0 {
+		return 0, fmt.Errorf("duration must be greater than 0")
+	}
+
+	return time.Duration(hours * float64(time.Hour)), nil
+}
+
 func GetDateFromText(sdate string) (time.Time, error) {
 	var date time.Time
 

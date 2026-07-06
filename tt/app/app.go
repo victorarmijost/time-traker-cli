@@ -10,6 +10,7 @@ type App struct {
 	records domain.RecordRepository
 	track   domain.TrackRepository
 	stats   domain.StatsRepository
+	timer   *domain.Timer
 }
 
 func NewApp(config domain.ConfigRepository, records domain.RecordRepository, track domain.TrackRepository, stats domain.StatsRepository) *App {
@@ -19,5 +20,6 @@ func NewApp(config domain.ConfigRepository, records domain.RecordRepository, tra
 		track:   track,
 		stats:   stats,
 		date:    domain.NewDateInMemory(),
+		timer:   domain.NewTimer(),
 	}
 }

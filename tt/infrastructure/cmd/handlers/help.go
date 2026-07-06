@@ -20,6 +20,10 @@ func (h *Handlers) AddHelp() {
 	//Navigate
 	h.mux.AddHelp("change date", "Allow to change the current working date.")
 
+	//Timer
+	h.mux.AddHelp("timer", "Starts a countdown timer (hh:mm, eg. 01:30), shown on the status bar. Independent of recording: time is only logged if a work record is already open.")
+	h.mux.AddHelp("timer stop", "Stops the current countdown timer.")
+
 	//Templates
 	h.mux.AddHelp("temp add", "Adds a new record template.")
 	h.mux.AddHelp("temp list", "List all the existing templates.")

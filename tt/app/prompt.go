@@ -60,6 +60,10 @@ func (p *promptData) GetDate() time.Time {
 	return p.app.date.Get()
 }
 
+func (p *promptData) TimerRemaining() float64 {
+	return p.app.GetTimerRemaining().Minutes()
+}
+
 func (p *promptData) keepRefreshing() {
 	for range time.Tick(60 * time.Second) {
 		p.RefreshData()

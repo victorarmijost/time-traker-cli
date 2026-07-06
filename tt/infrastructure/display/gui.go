@@ -62,6 +62,10 @@ func (g *GUI) Run() {
 }
 
 func (g *GUI) titleText() string {
+	if remaining := g.getCustomTimerTime(); remaining > 0 {
+		return fmt.Sprintf("%s %s", "⏱️", domain.FormatDuration(remaining))
+	}
+
 	if !g.propmptData.IsWorking() {
 		return "💤"
 	}
@@ -122,6 +126,10 @@ func (g *GUI) getPomodoroTime() float64 {
 	}
 
 	return left
+}
+
+func (g *GUI) getCustomTimerTime() float64 {
+	return g.app.GetTimerRemaining().Minutes()
 }
 
 func (g *GUI) areTimersDone() bool {

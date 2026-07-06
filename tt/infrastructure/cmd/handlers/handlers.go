@@ -128,5 +128,31 @@ func (h *Handlers) ChangeDate(r *repl.Request, w repl.IO) {
 func (h *Handlers) DeleteStoredRecord(r *repl.Request, w repl.IO) {
 }
 
+func (h *Handlers) StartTimer(r *repl.Request, w repl.IO) {
+	duration, err := repl.ParseArg(r, "Duration", domain.ParseTimerDuration)
+	if err != nil {
+		repl.PrintError(w, err)
+		return
+	}
+
+	err = h.kern.StartTimer(r.Ctx(), duration)
+	if err != nil {
+		repl.PrintError(w, err)
+		return
+	}
+
+	repl.PrintInfoMsg(w, fmt.Sprintf("Timer started for %s!", duration))
+}
+
+func (h *Handlers) StopTimer(r *repl.Request, w repl.IO) {
+	err := h.kern.StopTimer(r.Ctx())
+	if err != nil {
+		repl.PrintError(w, err)
+		return
+	}
+
+	repl.PrintInfoMsg(w, "Timer stopped!")
+}
+
 func (h *Handlers) EditStoredRecord(r *repl.Request, w repl.IO) {
 }

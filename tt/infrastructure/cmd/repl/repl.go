@@ -80,6 +80,10 @@ func (c *Repl) promptUpdate(forceRefresh bool) {
 		statusBar = fmt.Sprintf("%s[Rec:%s][%s]", statusBar, domain.FormatDuration(c.data.Tt()), getClockEmoji())
 	}
 
+	if remaining := c.data.TimerRemaining(); remaining > 0 {
+		statusBar = fmt.Sprintf("%s[%s]", statusBar, domain.FormatDuration(remaining))
+	}
+
 	if !c.data.IsToday() {
 		statusBar = fmt.Sprintf("%s[%s]", statusBar, c.data.GetDate().Format("06-01-02"))
 	}

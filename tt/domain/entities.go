@@ -110,4 +110,5 @@ type PromptData interface {
 	IsWorking() bool
 	IsToday() bool
 	GetDate() time.Time
+	TimerRemaining() float64
 }
